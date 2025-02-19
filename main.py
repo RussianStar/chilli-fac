@@ -1,36 +1,20 @@
 import RPi.GPIO as GPIO
 import requests
+import json
 from  flask  import Flask, render_template_string
 
 # Initialize Flask app
 app = Flask(__name__)
 
-PIN_NAMES=  {
-    1: "Pumpe",
-    2: "Ventil unten", 
-    3: "Ventil mitte",
-    4: "Ventil oben"
-}
+with open('config.json') as f:
+    config = json.load(f)
+
+PIN_NAMES = config['pin_names']
+GPIO_PINS = {int(k): v for k,v in config['gpio_pins'].items()} 
+CAMERA_ENDPOINTS = config['camera_endpoints']
 
 # Setup GPIO
 GPIO.setmode(GPIO.BCM)
-GPIO_PINS = {
-    1: 26,
-    2: 20,
-    3: 19,
-    4: 12 
-}
-
-# Camera endpoints
-# Make sure all cameras are shown. I want them in rows with 2 cameras in each row. Do this for all camera endpoints. Also make the update button smaller and below the image
-CAMERA_ENDPOINTS = [
-    'http://192.168.178.155:8080',
-    'http://192.168.178.157:8080',
-    'http://192.168.178.152:8080',
-    'http://192.168.178.158:8080',
-    'http://192.168.178.197:8080',
-    'http://192.168.178.198:8080'
-]
 
 # Initialize GPIO pins as outputs
 for pin in GPIO_PINS.values():
