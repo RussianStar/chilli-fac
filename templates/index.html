@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .camera-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .camera-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .update-btn, .take-picture-btn {
+            margin-top: 10px;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .controls {
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        {% for id, pin in pins.items() %}
+        <div style="margin: 10px">
+            <span>{{ pin_names[id] }}</span>
+            <button onclick="window.location.href='/toggle/{{ id }}'">
+                Toggle
+            </button>
+            <span>State: {{ "ON" if states[id] else "OFF" }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="camera-grid">
+        {% for i in range(camera_count) %}
+        <div class="camera-container">
+            <img id="camera{{i}}" src="/camera/{{i}}" style="width: 320px; height: 240px"/>
+            <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
+                Update Camera {{i+1}}
+            </button>
+            <button class="take-picture-btn" onclick="takePicture({{i}})">
+                Take Picture 
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        function updateImage(imgId, cameraIndex) {
+            const img = document.getElementById(imgId);
+            img.src = '/camera/' + cameraIndex + '?t=' + new Date().getTime();
+        }
+        
+        function takePicture(cameraIndex) {
+            fetch('/camera/' + cameraIndex + '/take/picture', {
+                method: 'POST'
+            })
+            .then(response => {
+                if(response.ok) {
+                    alert('Picture taken successfully!');
+                } else {
+                    alert('Failed to take picture');
+                }
+            })
+            .catch(error => {
+                alert('Error taking picture: ' + error);
+            });
+        }
+    </script>
+</body>
+</html>

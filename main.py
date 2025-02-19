@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 import requests
 import json
-from  flask  import Flask, render_template_string
+from  flask  import Flask, render_template
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -21,84 +21,6 @@ for pin in GPIO_PINS.values():
     GPIO.setup(pin, GPIO.OUT)
     GPIO.output(pin, GPIO.LOW)
 
-HTML = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        .camera-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .camera-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .update-btn, .take-picture-btn {
-            margin-top: 10px;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-        .controls {
-            margin: 10px;
-        }
-    </style>
-</head>
-<body>
-    <div class="controls">
-        {% for id, pin in pins.items() %}
-        <div style="margin: 10px">
-            <span>{{ pin_names[id] }}</span>
-            <button onclick="window.location.href='/toggle/{{ id }}'">
-                Toggle
-            </button>
-            <span>State: {{ "ON" if states[id] else "OFF" }}</span>
-        </div>
-        {% endfor %}
-    </div>
-
-    <div class="camera-grid">
-        {% for i in range(camera_count) %}
-        <div class="camera-container">
-            <img id="camera{{i}}" src="/camera/{{i}}" style="width: 320px; height: 240px"/>
-            <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
-                Update Camera {{i+1}}
-            </button>
-            <button class="take-picture-btn" onclick="takePicture({{i}})">
-                Take Picture 
-            </button>
-        </div>
-        {% endfor %}
-    </div>
-
-    <script>
-        function updateImage(imgId, cameraIndex) {
-            const img = document.getElementById(imgId);
-            img.src = '/camera/' + cameraIndex + '?t=' + new Date().getTime();
-        }
-        
-        function takePicture(cameraIndex) {
-            fetch('/camera/' + cameraIndex + '/take/picture', {
-                method: 'POST'
-            })
-            .then(response => {
-                if(response.ok) {
-                    alert('Picture taken successfully!');
-                } else {
-                    alert('Failed to take picture');
-                }
-            })
-            .catch(error => {
-                alert('Error taking picture: ' + error);
-            });
-        }
-    </script>
-</body>
-</html>
-'''
 
 # Add new route for taking pictures
 @app.route('/camera/<int:camera_id>/take/picture', methods=['POST'])
@@ -119,7 +41,7 @@ def take_picture(camera_id):
  
 @app.route('/')
 def home():
-    return render_template_string(HTML, 
+    return render_template("index.html", 
                                 pins=GPIO_PINS, 
                                 states=pin_states, 
                                 pin_names=PIN_NAMES,
@@ -169,7 +91,7 @@ def toggle(id):
     if id in GPIO_PINS:
         pin_states[id] = not pin_states[id]
         GPIO.output(GPIO_PINS[id], pin_states[id])
-    return render_template_string(HTML, 
+    return render_template("index.html", 
                                 pins=GPIO_PINS, 
                                 states=pin_states, 
                                 pin_names=PIN_NAMES,
