@@ -1,16 +1,17 @@
 {
-
     "pin_names": {
         "1": "Pumpe",
         "2": "Ventil unten",
         "3": "Ventil mitte", 
-        "4": "Ventil oben"
+        "4": "Ventil oben",
+        "5": "Light"
     },
     "gpio_pins": {
         "1": 26,
         "2": 20,
         "3": 19,
-        "4": 12
+        "4": 12,
+        "5": 4
     },
     "camera_endpoints": [
         "http://192.168.178.155:8080",

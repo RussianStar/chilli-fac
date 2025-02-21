@@ -1,7 +1,7 @@
-import RPi.GPIO as GPIO
 import requests
 import json
 from  flask  import Flask, render_template
+from hydro import Hydro
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -9,18 +9,12 @@ app = Flask(__name__)
 with open('config.json') as f:
     config = json.load(f)
 
+wtrctrl = Hydro(config['gpio_pins'],True)
 PIN_NAMES = config['pin_names']
 GPIO_PINS = {int(k): v for k,v in config['gpio_pins'].items()} 
+LIGHT_PINS = {1:12, 2:23} 
+PUMP_PINS = {1:26} 
 CAMERA_ENDPOINTS = config['camera_endpoints']
-
-# Setup GPIO
-GPIO.setmode(GPIO.BCM)
-
-# Initialize GPIO pins as outputs
-for pin in GPIO_PINS.values():
-    GPIO.setup(pin, GPIO.OUT)
-    GPIO.output(pin, GPIO.LOW)
-
 
 # Add new route for taking pictures
 @app.route('/camera/<int:camera_id>/take/picture', methods=['POST'])
@@ -28,7 +22,7 @@ def take_picture(camera_id):
     if camera_id < len(CAMERA_ENDPOINTS):
         try:
             # POST to camera endpoint
-            response = requests.post(f"{CAMERA_ENDPOINTS[camera_id]}/take/picture")
+            response = requests.get(f"{CAMERA_ENDPOINTS[camera_id]}/take/picture")
             
             if response.status_code == 200:
                 return "Picture taken successfully", 200
@@ -42,14 +36,54 @@ def take_picture(camera_id):
 @app.route('/')
 def home():
     return render_template("index.html", 
-                                pins=GPIO_PINS, 
-                                states=pin_states, 
+                                 valves=valve_states,
+                                 lights=light_states,
+                                 pumps=pump_states,
                                 pin_names=PIN_NAMES,
                                 camera_count=len(CAMERA_ENDPOINTS))
 
+pump_states = {1: False}
+light_states = {1: False, 2: False }
+valve_states = {1: False, 2: False , 3: False }
 
+# Endpoint for toggling pump
+@app.route('/pump/toggle')
+def toggle_pump():
+    pump_states[1] = not pump_states[1]
+    wtrctrl.set_pump(pump_states[1])
+    return render_template("index.html",
+                         valves=valve_states,
+                         lights=light_states,
+                         pumps=pump_states,
+                         pin_names=PIN_NAMES,
+                         camera_count=len(CAMERA_ENDPOINTS))
+
+# Endpoint for toggling valves
+@app.route('/valve/<int:valve_id>/toggle')
+def toggle_valve(valve_id):
+    if valve_id in GPIO_PINS:
+        valve_states[valve_id] = not valve_states[valve_id]
+        wtrctrl.set_valve(valve_id, valve_states[valve_id])
+    return render_template("index.html",
+                         valves=valve_states,
+                         lights=light_states,
+                         pumps=pump_states,
+                         pin_names=PIN_NAMES,
+                         camera_count=len(CAMERA_ENDPOINTS))
+
+# Endpoint for toggling lights
+@app.route('/light/<int:light_id>/toggle')
+def toggle_light(light_id):
+
+    light_states[light_id] = not light_states[light_id]
+    print(f"Setting light #{light_id} to {light_states[light_id]}")
+    return render_template("index.html",
+                         valves=valve_states,
+                         lights=light_states,
+                         pumps=pump_states,
+                         pin_names=PIN_NAMES,
+                         camera_count=len(CAMERA_ENDPOINTS))
 # Track states
-pin_states = {1: False, 2: False, 3: False, 4: False}
 
 @app.route('/camera/<int:camera_id>')
 def get_camera_image(camera_id):
@@ -86,22 +120,12 @@ def get_camera_image(camera_id):
             
     return "Camera not found", 404
 
-@app.route('/toggle/<int:id>')
-def toggle(id):
-    if id in GPIO_PINS:
-        pin_states[id] = not pin_states[id]
-        GPIO.output(GPIO_PINS[id], pin_states[id])
-    return render_template("index.html", 
-                                pins=GPIO_PINS, 
-                                states=pin_states, 
-                                pin_names=PIN_NAMES,
-                                camera_count=len(CAMERA_ENDPOINTS))
 
 def main():
     try:
         app.run(host='0.0.0.0', port=5000)
     finally:
-        GPIO.cleanup()
+        wtrctrl.cleanup()
 
 if __name__ == "__main__":
     main()
