@@ -11,6 +11,44 @@
         }
 
 
+        .brightness-control {
+            margin: 10px 0;
+        }
+
+        .brightness-slider {
+            width: 200px;
+            height: 20px;
+            -webkit-appearance: none;
+            background: #d3d3d3;
+            outline: none;
+            border-radius: 10px;
+        }
+
+        .brightness-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 25px;
+            height: 25px;
+            background: #4CAF50;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .brightness-value {
+            margin-left: 10px;
+        }
+
+        .state-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: #ff4444;
+            color: white;
+        }
+
+        .state-indicator.active {
+            background: #00C851;
+        }
+
         .camera-container {
             background: white;
             padding: 2rem;
@@ -173,21 +211,32 @@
 
 <body>
     <h1>Tillis Schillis</h1>
+        <div class="controls">
+            <!-- Light Section -->
+            <div class="control-section">
+                <h2>Lights</h2>
+            {% for light_id, state in lights.items() %}
+                <div class="control-item">
+                    <h3>Light {{ light_id }}</h3>
+                    <!-- Brightness Slider -->
+                    <div class="brightness-control">
+                        <form action="/light/{{ light_id }}/brightness" method="POST">
+                            <input type="range" 
+                                   name="brightness" 
+                                   min="0" 
+                                   max="100" 
+                                   value="{{ lights[light_id] }}"
+                                   oninput="this.form.submit();"
+                                   class="brightness-slider">
+                            <span class="brightness-value">{{ (lights[light_id] )|int }}%</span>
+                        </form>
+                    </div>
 
-    <div class="controls">
-        <!-- Lights Section -->
-        <div class="control-section">
-            <h2>Lights</h2>
-            {% for id, pin in lights.items() %}
-            <div class="control-item">
-                <h3>{{ pin_names[id] }}</h3>
-                <button onclick="window.location.href='/light/{{ id }}/toggle'">
-                    Toggle
-                </button>
-                <div class="state-indicator {{ 'active' if lights[id] else '' }}">
-                    {{ "ON" if lights[id] else "OFF" }}
+                    <!-- Status Indicator -->
+                    <div class="state-indicator {{ 'active' if state else '' }}">
+                        {{ "ON" if state else "OFF" }}
+                    </div>
                 </div>
-            </div>
             {% endfor %}
         </div>
 

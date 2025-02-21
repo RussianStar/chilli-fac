@@ -1,7 +1,8 @@
 import requests
 import json
-from  flask  import Flask, render_template
+from  flask  import Flask, render_template, request
 from hydro import Hydro
+from lux import Lux
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -10,9 +11,14 @@ with open('config.json') as f:
     config = json.load(f)
 
 wtrctrl = Hydro(config['gpio_pins'],True)
+zeus = {1:Lux(6, debug=True),2:Lux(16, debug=True)}
+
+pump_states = {1: False}
+light_states = {1: 0, 2: 0 }
+valve_states = {1: False, 2: False , 3: False }
+
 PIN_NAMES = config['pin_names']
 GPIO_PINS = {int(k): v for k,v in config['gpio_pins'].items()} 
-LIGHT_PINS = {1:12, 2:23} 
 PUMP_PINS = {1:26} 
 CAMERA_ENDPOINTS = config['camera_endpoints']
 
@@ -42,9 +48,6 @@ def home():
                                 pin_names=PIN_NAMES,
                                 camera_count=len(CAMERA_ENDPOINTS))
 
-pump_states = {1: False}
-light_states = {1: False, 2: False }
-valve_states = {1: False, 2: False , 3: False }
 
 # Endpoint for toggling pump
 @app.route('/pump/toggle')
@@ -71,19 +74,35 @@ def toggle_valve(valve_id):
                          pin_names=PIN_NAMES,
                          camera_count=len(CAMERA_ENDPOINTS))
 
-# Endpoint for toggling lights
-@app.route('/light/<int:light_id>/toggle')
-def toggle_light(light_id):
 
-    light_states[light_id] = not light_states[light_id]
-    print(f"Setting light #{light_id} to {light_states[light_id]}")
+
+
+@app.route('/light/<int:light_id>/brightness', methods=['POST'])
+def set_light_brightness(light_id):
+    # Get brightness value from request (0-100)
+    brightness = request.form.get('brightness', type=int, default=0)
+    
+    # Validate brightness is between 0-100
+    brightness = max(0, min(100, brightness))
+
+    # Get corresponding LED controller
+    if light_id <= len(zeus):
+        led_controller = zeus[light_id]
+
+        # Update light state based on brightness 
+        light_states[light_id] = brightness
+        
+        # Set brightness level (0-100%)
+        led_controller.set_level(brightness)
+
+        print(f"Setting light #{light_id} brightness to {brightness}%")
+    
     return render_template("index.html",
                          valves=valve_states,
-                         lights=light_states,
+                         lights=light_states, 
                          pumps=pump_states,
                          pin_names=PIN_NAMES,
                          camera_count=len(CAMERA_ENDPOINTS))
-# Track states
 
 @app.route('/camera/<int:camera_id>')
 def get_camera_image(camera_id):
