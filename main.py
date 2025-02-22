@@ -5,15 +5,24 @@ from hydro import Hydro
 from lux import Lux
 from static_light import StaticLight
 
+def is_raspberry_pi():
+    try:
+        with open('/proc/device-tree/model') as f:
+            return 'raspberry' in f.read().lower()
+    except:
+        return False
+
 # Initialize Flask app
 app = Flask(__name__)
+debug = not is_raspberry_pi();
 
 with open('config.json') as f:
     config = json.load(f)
 
-wtrctrl = Hydro(config,True)
-zeus = {int(k):Lux(v, debug=True) for k,v in config['light_pins'].items()}
-static_lights = {int(k):StaticLight(v, debug=True) for k,v in config['static_light_pins'].items()}
+wtrctrl = Hydro(config,debug)
+# set the debug parameter on whether this code is run on an raspberry pi or not
+zeus = {int(k):Lux(v, debug=debug) for k,v in config['light_pins'].items()}
+static_lights = {int(k):StaticLight(v, debug=debug) for k,v in config['static_light_pins'].items()}
 
 pump_states = { 1:False}
 light_states = {int(k): False for k,_ in config['light_pins'].items()}
