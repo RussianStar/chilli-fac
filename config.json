@@ -1,9 +1,12 @@
 {
     "pump_pin": 26,
     "valve_pins":{
-        "3": 26,
+        "3": 12,
         "1": 20,
         "2": 19
+    },
+    "static_light_pins":{
+        "1": 23
     },
     "light_pins":{
         "1": 6,

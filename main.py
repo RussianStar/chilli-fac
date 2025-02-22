@@ -3,6 +3,7 @@ import json
 from  flask  import Flask, render_template, request
 from hydro import Hydro
 from lux import Lux
+from static_light import StaticLight
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -11,11 +12,13 @@ with open('config.json') as f:
     config = json.load(f)
 
 wtrctrl = Hydro(config,True)
+zeus = {int(k):Lux(v, debug=True) for k,v in config['light_pins'].items()}
+static_lights = {int(k):StaticLight(v, debug=True) for k,v in config['static_light_pins'].items()}
 
-pump_states = {int(k): False for k,_ in config['pump_pins'].item()}
-light_states = {int(k): False for k,_ in config['light_pins'].item()}
+pump_states = { 1:False}
+light_states = {int(k): False for k,_ in config['light_pins'].items()}
+static_light_states = {int(k): False for k,_ in config['static_light_pins'].items()}
 valve_states ={int(k): False for k,_ in config['valve_pins'].items()}  
-zeus = {int(k):Lux(v, debug=True) for k,v in config['light_pins'].item()}
 
 CAMERA_ENDPOINTS = config['camera_endpoints']
 
@@ -42,6 +45,7 @@ def home():
                                  valves=valve_states,
                                  lights=light_states,
                                  pumps=pump_states,
+                                 static_lights=static_light_states, 
                                 camera_count=len(CAMERA_ENDPOINTS))
 
 
@@ -57,6 +61,7 @@ def water_level(level):
         return render_template("index.html",
                          valves=valve_states,
                          lights=light_states,
+                         static_lights=static_light_states, 
                          pumps=pump_states,
                          camera_count=len(CAMERA_ENDPOINTS))
                          
@@ -64,6 +69,28 @@ def water_level(level):
         return str(e), 400
     except Exception as e:
         return f"Error watering level: {str(e)}", 500
+
+@app.route('/static_light/<int:light_id>/toggle', methods=['POST'])
+def toggle_static_light(light_id):
+    # Get corresponding static light controller
+    if light_id <= len(static_lights):
+        light_controller = static_lights[light_id]
+        
+        if light_controller.is_on():
+            light_controller.turn_off()
+            static_light_states[light_id] = False
+        else:
+            light_controller.turn_on()
+            static_light_states[light_id] = True
+
+        print(f"Toggling static light #{light_id} to {static_light_states[light_id]}")
+    
+    return render_template("index.html",
+                         valves=valve_states,
+                         lights=light_states,
+                         static_lights=static_light_states,
+                         pumps=pump_states,
+                         camera_count=len(CAMERA_ENDPOINTS))
 
 @app.route('/light/<int:light_id>/brightness', methods=['POST'])
 def set_light_brightness(light_id):
@@ -88,6 +115,7 @@ def set_light_brightness(light_id):
     return render_template("index.html",
                          valves=valve_states,
                          lights=light_states, 
+                         static_lights=static_light_states, 
                          pumps=pump_states,
                          camera_count=len(CAMERA_ENDPOINTS))
 

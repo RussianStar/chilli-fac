@@ -233,50 +233,75 @@
                 </div>
             </div>
             {% endfor %}
+
+            <div class="control-section">
+                <h2>Static Lights</h2>
+                {% for light_id, state in static_lights.items() %}
+                <div class="control-item">
+                    <h3>Static Light {{ light_id }}</h3>
+
+                    <!-- Status Indicator -->
+                    <div class="state-indicator {{ 'active' if state else '' }}">
+                        {{ "ON" if state else "OFF" }}
+                    </div>
+
+                    <!-- Toggle Button Form -->
+                    <form action="/static_light/{{ light_id }}/toggle" method="POST">
+                        <button type="submit" class="toggle-button">
+                            Toggle
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
         </div>
 
         <!-- Pump Section -->
         <div class="control-section">
-            <h2>Pump</h2>
-            {% for id, pin in pumps.items() %}
+            <h2>Water Levels</h2>
+
+            <!-- Level 1 -->
             <div class="control-item">
-                <button onclick="window.location.href='/pump/toggle'">
-                    Toggle
+                <h3>Level 1</h3>
+                <button onclick="waterLevel(1)">
+                    Water Level 1
                 </button>
-                <div class="state-indicator {{ 'active' if pumps[id] else '' }}">
-                    {{ "ON" if pumps[id] else "OFF" }}
-                </div>
             </div>
-            {% endfor %}
+
+            <!-- Level 2 -->
+            <div class="control-item">
+                <h3>Level 2</h3>
+                <button onclick="waterLevel(2)">
+                    Water Level 2
+                </button>
+            </div>
+
+            <!-- Level 3 -->
+            <div class="control-item">
+                <h3>Level 3</h3>
+                <button onclick="waterLevel(3)">
+                    Water Level 3
+                </button>
+            </div>
         </div>
 
-        <h2>Water Levels</h2>
-
-        <!-- Level 1 -->
-        <div class="control-item">
-            <h3>Level 1</h3>
-            <button onclick="waterLevel(1)">
-                Water Level 1
-            </button>
-        </div>
-
-        <!-- Level 2 -->
-        <div class="control-item">
-            <h3>Level 2</h3>
-            <button onclick="waterLevel(2)">
-                Water Level 2
-            </button>
-        </div>
-
-        <!-- Level 3 -->
-        <div class="control-item">
-            <h3>Level 3</h3>
-            <button onclick="waterLevel(3)">
-                Water Level 3
-            </button>
-        </div>
     </div>
 
+    <div class="camera-grid">
+        {% for i in range(camera_count) %}
+        <div class="camera-container">
+            <img id="camera{{i}}" src="/camera/{{i}}" width="320" height="240" />
+            <div>
+                <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
+                    Update Camera {{i+1}}
+                </button>
+                <button class="take-picture-btn" onclick="takePicture({{i}})">
+                    Take Picture
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
     <script>
         function waterLevel(level) {
             // Default duration 5 minutes (300 seconds)

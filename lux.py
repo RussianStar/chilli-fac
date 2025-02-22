@@ -1,4 +1,3 @@
-
 class Lux:
     def __init__(self, pin: int = 16, freq: int = 1000, debug: bool = False):
         """Initialize PWM LED controller
