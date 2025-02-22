@@ -10,12 +10,12 @@ class Hydro:
             
             # Setup pump pin
             GPIO.setup(gpio_config["pump_pin"], GPIO.OUT)
-            GPIO.output(gpio_config["pump_pin"], GPIO.LOW)
+            GPIO.output(gpio_config["pump_pin"], GPIO.HIGH)
             
             # Setup valve pins
             for pin in gpio_config["valve_pins"].values():
                 GPIO.setup(pin, GPIO.OUT)
-                GPIO.output(pin, GPIO.LOW)
+                GPIO.output(pin, GPIO.HIGH)
 
     def water_level(self, level: int, duration: int = 300):
         """
@@ -59,7 +59,7 @@ class Hydro:
 
         pin = self.gpio_config["valve_pins"][str(valve_num)]
         import RPi.GPIO as GPIO
-        GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)
+        GPIO.output(pin, GPIO.LOW if state else GPIO.HIGH)
         
     def set_pump(self, state: bool):
         """Set pump state (on/off)"""
@@ -68,7 +68,7 @@ class Hydro:
             return
             
         import RPi.GPIO as GPIO  
-        GPIO.output(self.gpio_config["pump_pin"], GPIO.HIGH if state else GPIO.LOW)
+        GPIO.output(self.gpio_config["pump_pin"], GPIO.LOW if state else GPIO.HIGH)
 
     def cleanup(self):
         """Cleanup GPIO on exit"""

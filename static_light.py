@@ -15,7 +15,7 @@ class StaticLight:
             # Setup GPIO
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(self._pin, GPIO.OUT)
-            GPIO.output(self._pin, GPIO.LOW) # Start with LED off
+            GPIO.output(self._pin, GPIO.HIGH) # Start with LED off
 
     def turn_on(self) -> None:
         """Turn LED on"""
@@ -23,7 +23,7 @@ class StaticLight:
         print(f"Turning on light with gpio : {self._pin}")
         if not self._debug:
             import RPi.GPIO as GPIO
-            GPIO.output(self._pin, GPIO.HIGH)
+            GPIO.output(self._pin, GPIO.LOW)
             
     def turn_off(self) -> None: 
         """Turn LED off"""
@@ -31,7 +31,7 @@ class StaticLight:
         print(f"Turning off light with gpio : {self._pin}")
         if not self._debug:
             import RPi.GPIO as GPIO
-            GPIO.output(self._pin, GPIO.LOW)
+            GPIO.output(self._pin, GPIO.HIGH)
 
     def is_on(self) -> bool:
         """Get LED state
