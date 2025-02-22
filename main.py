@@ -10,16 +10,13 @@ app = Flask(__name__)
 with open('config.json') as f:
     config = json.load(f)
 
-wtrctrl = Hydro(config['gpio_pins'],True)
-zeus = {1:Lux(6, debug=True),2:Lux(16, debug=True)}
+wtrctrl = Hydro(config,True)
 
-pump_states = {1: False}
-light_states = {1: 0, 2: 0 }
-valve_states = {1: False, 2: False , 3: False }
+pump_states = {int(k): False for k,_ in config['pump_pins'].item()}
+light_states = {int(k): False for k,_ in config['light_pins'].item()}
+valve_states ={int(k): False for k,_ in config['valve_pins'].items()}  
+zeus = {int(k):Lux(v, debug=True) for k,v in config['light_pins'].item()}
 
-PIN_NAMES = config['pin_names']
-GPIO_PINS = {int(k): v for k,v in config['gpio_pins'].items()} 
-PUMP_PINS = {1:26} 
 CAMERA_ENDPOINTS = config['camera_endpoints']
 
 # Add new route for taking pictures
@@ -45,37 +42,28 @@ def home():
                                  valves=valve_states,
                                  lights=light_states,
                                  pumps=pump_states,
-                                pin_names=PIN_NAMES,
                                 camera_count=len(CAMERA_ENDPOINTS))
 
 
-# Endpoint for toggling pump
-@app.route('/pump/toggle')
-def toggle_pump():
-    pump_states[1] = not pump_states[1]
-    wtrctrl.set_pump(pump_states[1])
-    return render_template("index.html",
+@app.route('/level/<int:level>/water', methods=['POST'])
+def water_level(level):
+    # Get duration from request, default to 300 seconds (5 minutes)
+    duration = request.form.get('duration', type=int, default=300)
+    
+    try:
+        # Start watering the level using hydro controller
+        wtrctrl.water_level(level, duration)
+        
+        return render_template("index.html",
                          valves=valve_states,
                          lights=light_states,
                          pumps=pump_states,
-                         pin_names=PIN_NAMES,
                          camera_count=len(CAMERA_ENDPOINTS))
-
-# Endpoint for toggling valves
-@app.route('/valve/<int:valve_id>/toggle')
-def toggle_valve(valve_id):
-    if valve_id in GPIO_PINS:
-        valve_states[valve_id] = not valve_states[valve_id]
-        wtrctrl.set_valve(valve_id, valve_states[valve_id])
-    return render_template("index.html",
-                         valves=valve_states,
-                         lights=light_states,
-                         pumps=pump_states,
-                         pin_names=PIN_NAMES,
-                         camera_count=len(CAMERA_ENDPOINTS))
-
-
-
+                         
+    except ValueError as e:
+        return str(e), 400
+    except Exception as e:
+        return f"Error watering level: {str(e)}", 500
 
 @app.route('/light/<int:light_id>/brightness', methods=['POST'])
 def set_light_brightness(light_id):
@@ -101,7 +89,6 @@ def set_light_brightness(light_id):
                          valves=valve_states,
                          lights=light_states, 
                          pumps=pump_states,
-                         pin_names=PIN_NAMES,
                          camera_count=len(CAMERA_ENDPOINTS))
 
 @app.route('/camera/<int:camera_id>')

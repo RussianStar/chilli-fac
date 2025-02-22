@@ -211,32 +211,27 @@
 
 <body>
     <h1>Tillis Schillis</h1>
-        <div class="controls">
-            <!-- Light Section -->
-            <div class="control-section">
-                <h2>Lights</h2>
+    <div class="controls">
+        <!-- Light Section -->
+        <div class="control-section">
+            <h2>Licht</h2>
             {% for light_id, state in lights.items() %}
-                <div class="control-item">
-                    <h3>Light {{ light_id }}</h3>
-                    <!-- Brightness Slider -->
-                    <div class="brightness-control">
-                        <form action="/light/{{ light_id }}/brightness" method="POST">
-                            <input type="range" 
-                                   name="brightness" 
-                                   min="0" 
-                                   max="100" 
-                                   value="{{ lights[light_id] }}"
-                                   oninput="this.form.submit();"
-                                   class="brightness-slider">
-                            <span class="brightness-value">{{ (lights[light_id] )|int }}%</span>
-                        </form>
-                    </div>
-
-                    <!-- Status Indicator -->
-                    <div class="state-indicator {{ 'active' if state else '' }}">
-                        {{ "ON" if state else "OFF" }}
-                    </div>
+            <div class="control-item">
+                <h3>ZEUS {{ light_id }}</h3>
+                <!-- Brightness Slider -->
+                <div class="brightness-control">
+                    <form action="/light/{{ light_id }}/brightness" method="POST">
+                        <input type="range" name="brightness" min="0" max="100" value="{{ lights[light_id] }}"
+                            oninput="this.form.submit();" class="brightness-slider">
+                        <span class="brightness-value">{{ (lights[light_id] )|int }}%</span>
+                    </form>
                 </div>
+
+                <!-- Status Indicator -->
+                <div class="state-indicator {{ 'active' if state else '' }}">
+                    {{ "ON" if state else "OFF" }}
+                </div>
+            </div>
             {% endfor %}
         </div>
 
@@ -245,7 +240,6 @@
             <h2>Pump</h2>
             {% for id, pin in pumps.items() %}
             <div class="control-item">
-                <h3>{{ pin_names[id] }}</h3>
                 <button onclick="window.location.href='/pump/toggle'">
                     Toggle
                 </button>
@@ -256,40 +250,57 @@
             {% endfor %}
         </div>
 
-        <!-- Valves Section -->
-        <div class="control-section">
-            <h2>Valves</h2>
-            {% for id, pin in valves.items() %}
-            <div class="control-item">
-                <h3>{{ pin_names[id] }}</h3>
-                <button onclick="window.location.href='/valve/{{ id }}/toggle'">
-                    Toggle
-                </button>
-                <div class="state-indicator {{ 'active' if valves[id] else '' }}">
-                    {{ "ON" if valves[id] else "OFF" }}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
+        <h2>Water Levels</h2>
 
-    <div class="camera-grid">
-        {% for i in range(camera_count) %}
-        <div class="camera-container">
-            <img id="camera{{i}}" src="/camera/{{i}}" width="320" height="240" />
-            <div>
-                <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
-                    Update Camera {{i+1}}
-                </button>
-                <button class="take-picture-btn" onclick="takePicture({{i}})">
-                    Take Picture
-                </button>
-            </div>
+        <!-- Level 1 -->
+        <div class="control-item">
+            <h3>Level 1</h3>
+            <button onclick="waterLevel(1)">
+                Water Level 1
+            </button>
         </div>
-        {% endfor %}
+
+        <!-- Level 2 -->
+        <div class="control-item">
+            <h3>Level 2</h3>
+            <button onclick="waterLevel(2)">
+                Water Level 2
+            </button>
+        </div>
+
+        <!-- Level 3 -->
+        <div class="control-item">
+            <h3>Level 3</h3>
+            <button onclick="waterLevel(3)">
+                Water Level 3
+            </button>
+        </div>
     </div>
 
     <script>
+        function waterLevel(level) {
+            // Default duration 5 minutes (300 seconds)
+            const duration = 300;
+
+            fetch(`/level/${level}/water`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `duration=${duration}`
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    // Reload page to show updated state
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to water level: ' + error.message);
+                });
+        }
         function updateImage(imgId, cameraIndex) {
             const img = document.getElementById(imgId);
             img.src = '/camera/' + cameraIndex + '?t=' + new Date().getTime();
