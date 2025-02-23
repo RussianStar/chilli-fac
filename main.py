@@ -20,8 +20,7 @@ with open('config.json') as f:
     config = json.load(f)
 
 wtrctrl = Hydro(config,debug)
-# set the debug parameter on whether this code is run on an raspberry pi or not
-zeus = {int(k):Lux(v, debug=debug) for k,v in config['light_pins'].items()}
+zeus = {int(k):Lux(pin=v, freq=1000, debug=debug) for k,v in config['light_pins'].items()}
 static_lights = {int(k):StaticLight(v, debug=debug) for k,v in config['static_light_pins'].items()}
 
 pump_states = { 1:False}
@@ -31,12 +30,10 @@ valve_states ={int(k): False for k,_ in config['valve_pins'].items()}
 
 CAMERA_ENDPOINTS = config['camera_endpoints']
 
-# Add new route for taking pictures
 @app.route('/camera/<int:camera_id>/take/picture', methods=['POST'])
 def take_picture(camera_id):
     if camera_id < len(CAMERA_ENDPOINTS):
         try:
-            # POST to camera endpoint
             response = requests.get(f"{CAMERA_ENDPOINTS[camera_id]}/take/picture")
             
             if response.status_code == 200:
@@ -60,11 +57,9 @@ def home():
 
 @app.route('/level/<int:level>/water', methods=['POST'])
 def water_level(level):
-    # Get duration from request, default to 300 seconds (5 minutes)
-    duration = request.form.get('duration', type=int, default=300)
+    duration = request.form.get('duration', type=int, default=45)
     
     try:
-        # Start watering the level using hydro controller
         wtrctrl.water_level(level, duration)
         
         return render_template("index.html",
@@ -81,7 +76,6 @@ def water_level(level):
 
 @app.route('/static_light/<int:light_id>/toggle', methods=['POST'])
 def toggle_static_light(light_id):
-    # Get corresponding static light controller
     if light_id <= len(static_lights):
         light_controller = static_lights[light_id]
         

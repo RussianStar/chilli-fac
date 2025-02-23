@@ -12,6 +12,7 @@ class Lux:
         self._current_level = 0
         self._debug = debug
         
+        print(f'led controller on {self._pin} with frequency of {self._freq}Hz')
         if not debug:
             import RPi.GPIO as GPIO
             
