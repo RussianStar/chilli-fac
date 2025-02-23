@@ -17,14 +17,13 @@ class Hydro:
                 GPIO.setup(pin, GPIO.OUT)
                 GPIO.output(pin, GPIO.HIGH)
 
-    def water_level(self, level: int, duration: int = 300):
+    def water_level(self, level: int, duration: int = 30):
         """
         Water a specific level for given duration
         Args:
             level: Level number (1-num_valves) to water
             duration: Watering duration in seconds (default 5min = 300s)
         """
-        # Validate level
         if level not in range(1, self.num_valves + 1):
             raise ValueError(f"Invalid level number. Must be 1-{self.num_valves}")
 
@@ -33,16 +32,17 @@ class Hydro:
             for valve in range(1, self.num_valves + 1):
                 self.set_valve(valve, False)
                 
-            # Open valve for specified level
             self.set_valve(level, True)
             
             # Start pump
             self.set_pump(True)
             
-            # Wait for duration
             from time import sleep
             sleep(duration)
-            
+
+            self.set_pump(False)
+            self.set_valve(level, True)
+
         finally:
             # Cleanup - close valve and stop pump
             self.set_valve(level, False)
@@ -53,8 +53,8 @@ class Hydro:
         if valve_num not in range(1, self.num_valves + 1):
             raise ValueError(f"Invalid valve number. Must be 1-{self.num_valves}")
             
+        print(f"Setting valve {valve_num} to {state}")
         if self.debug:
-            print(f"Setting valve {valve_num} to {state}")
             return
 
         pin = self.gpio_config["valve_pins"][str(valve_num)]
@@ -63,8 +63,9 @@ class Hydro:
         
     def set_pump(self, state: bool):
         """Set pump state (on/off)"""
+
+        print(f"Setting pump to {state}")
         if self.debug:
-            print(f"Setting pump to {state}")
             return
             
         import RPi.GPIO as GPIO  
