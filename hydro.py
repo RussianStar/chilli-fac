@@ -1,7 +1,8 @@
 class Hydro:
-    def __init__(self, gpio_config, debug = False):
+    def __init__(self,logger, gpio_config, debug = False):
         self.gpio_config = gpio_config
         self.debug = debug
+        self._logger = logger,
         self.num_valves = len(gpio_config["valve_pins"])
         
         if not debug:
@@ -53,7 +54,7 @@ class Hydro:
         if valve_num not in range(1, self.num_valves + 1):
             raise ValueError(f"Invalid valve number. Must be 1-{self.num_valves}")
             
-        print(f"Setting valve {valve_num} to {state}")
+        self._logger.debug(f"Setting valve {valve_num} to {state}")
         if self.debug:
             return
 
@@ -64,7 +65,7 @@ class Hydro:
     def set_pump(self, state: bool):
         """Set pump state (on/off)"""
 
-        print(f"Setting pump to {state}")
+        self._logger.debug(f"Setting pump to {state}")
         if self.debug:
             return
             

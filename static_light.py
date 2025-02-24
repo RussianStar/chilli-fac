@@ -1,5 +1,5 @@
 class StaticLight:
-    def __init__(self, pin: int = 23, debug: bool = False):
+    def __init__(self,logger, pin: int = 23, debug: bool = False):
         """Initialize GPIO LED controller
         Args:
             pin (int): GPIO pin number (default 16) 
@@ -8,6 +8,7 @@ class StaticLight:
         self._pin = pin
         self._is_on = False
         self._debug = debug
+        self._logger = logger
         
         if not debug:
             import RPi.GPIO as GPIO
@@ -20,7 +21,7 @@ class StaticLight:
     def turn_on(self) -> None:
         """Turn LED on"""
         self._is_on = True
-        print(f"Turning on light with gpio : {self._pin}")
+        self._logger.debug(f"Turning on light with gpio : {self._pin}")
         if not self._debug:
             import RPi.GPIO as GPIO
             GPIO.output(self._pin, GPIO.LOW)
@@ -28,7 +29,7 @@ class StaticLight:
     def turn_off(self) -> None: 
         """Turn LED off"""
         self._is_on = False
-        print(f"Turning off light with gpio : {self._pin}")
+        self._logger.debug(f"Turning off light with gpio : {self._pin}")
         if not self._debug:
             import RPi.GPIO as GPIO
             GPIO.output(self._pin, GPIO.HIGH)

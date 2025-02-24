@@ -1,5 +1,6 @@
 {
     "pump_pin": 26,
+    "logging_interval": 300,
     "valve_pins":{
         "1": 20,
         "2": 19,

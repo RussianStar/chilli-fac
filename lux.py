@@ -1,5 +1,5 @@
 class Lux:
-    def __init__(self, pin: int = 16, freq: int = 1000, debug: bool = False):
+    def __init__(self, logger, pin: int = 16, freq: int = 1000, debug: bool = False):
         """Initialize PWM LED controller
         Args:
             pin (int): GPIO pin number (default 16)
@@ -11,8 +11,9 @@ class Lux:
         self._pwm = None
         self._current_level = 0
         self._debug = debug
+        self._logger = logger
         
-        print(f'led controller on {self._pin} with frequency of {self._freq}Hz')
+        self._logger.debug(f'led controller on {self._pin} with frequency of {self._freq}Hz')
         if not debug:
             import RPi.GPIO as GPIO
             
