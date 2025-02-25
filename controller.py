@@ -71,6 +71,11 @@ class Controller:
         
         # Track active zone
         current_zone = None
+
+        # Setting initial state
+        for id in range(1, current_state.wtrctrl.num_valves + 1):
+            current_state.wtrctrl.set_valve(id, False)
+        await asyncio.sleep(1)
         
         try:
             # Update status to in_progress

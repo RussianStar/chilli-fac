@@ -36,7 +36,12 @@ class Hydro(gpio_device):
             for pin in gpio_config["valve_pins"].values():
                 GPIO.setup(pin, GPIO.OUT)
                 GPIO.output(pin, GPIO.HIGH)
-            
+
+    def close_all_valves(self):
+        for valve in range(1, self.num_valves + 1):
+            self.set_valve(valve,False)
+        self.set_pump(False)
+
     def set_valve(self, valve_num: int, state: bool):
         """Set valve state (on/off)"""
         if valve_num not in range(1, self.num_valves + 1):

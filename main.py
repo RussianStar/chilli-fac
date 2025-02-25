@@ -241,7 +241,7 @@ class HydroControlApp:
                 self.current_state.watering_state['cancelled_at'] = datetime.now().isoformat()
             
             # Ensure all valves are closed
-            await self.current_state.wtrctrl.close_all_valves()
+            self.current_state.wtrctrl.close_all_valves()
             
             return web.json_response({
                 'status': 'cancelled',
