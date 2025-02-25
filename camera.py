@@ -1,65 +1,59 @@
+import asyncio
+import aiohttp
 
-import time
-import requests
-
-def capture_image_data(logger,camera_id,endpoint, images):
+async def capture_image_data(logger,camera_id,endpoint):
     try:
-        response = requests.get(f"{endpoint}/take/picture")
-        if response.status_code == 200:
-            logger.info(f"Successfully requested new image for : {camera_id}")
-            time.sleep(40)
-        else:
-            # no picture, no camera.
-            return
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{endpoint}/take/picture") as response:
+                if response.status == 200:
+                    logger.info(f"Successfully requested new image for : {camera_id}")
+                    await asyncio.sleep(120)
+                else:
+                    # no picture, no camera.
+                    return
 
-        response = requests.get(endpoint)
-        logger.info(f"Getting image for {camera_id}")
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(response.content, 'html.parser')
-        img = soup.body.find('img')
+            logger.info(f"Getting image for {camera_id}")
+            
+            image_bytes = await get_camera_bytes(endpoint)
+            
+            if isinstance(image_bytes, bytes):
+                logger.info(f"Successfully received image from: {camera_id}")
+                import base64
+                base64_data = base64.b64encode(image_bytes).decode('utf-8')
+                return camera_id,base64_data
 
-        if img and img.get('src'):
-            logger.info(f"Successfully received image from: {camera_id}")
-            img_data = img['src']
-            if img_data.startswith('data:image/jpeg;base64,'):
-                base64_data = img_data.split(',')[1]
-                
-                images.append((camera_id, base64_data))
-                return
-                
-
-        logger.info(f"Done.")
-        return
+        logger.info("Done.")
+        return None
     
     except Exception as e:
         logger.error(f"Error logging camera {camera_id}: {str(e)}")
         return
 
-
-def get_camera_bytes(endpoint):
+async def get_camera_bytes(endpoint):
         try:
-            response = requests.get(endpoint)
-            
-            # Parse HTML content
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(response.content, 'html.parser')
-            
-            # Find first image in body
-            img = soup.body.find('img')
-            if img and img.get('src'):
-                # Get base64 data directly from src attribute
-                img_data = img['src']
-                
-                # Check if it's a base64 encoded image
-                if img_data.startswith('data:image/jpeg;base64,'):
-                    # Extract just the base64 content
-                    base64_data = img_data.split(',')[1]
+            timeout = aiohttp.ClientTimeout(total=60)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.get(endpoint) as response:
+                    content = await response.text()
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(content, 'html.parser')
                     
-                    # Decode base64 to bytes
-                    import base64
-                    image_bytes = base64.b64decode(base64_data)
-                    
-                    return image_bytes
+                    # Find first image in body
+                    img = soup.body.find('img')
+                    if img and img.get('src'):
+                        # Get base64 data directly from src attribute
+                        img_data = img['src']
+                        
+                        # Check if it's a base64 encoded image
+                        if img_data.startswith('data:image/jpeg;base64,'):
+                            # Extract just the base64 content
+                            base64_data = img_data.split(',')[1]
+                            
+                            # Decode base64 to bytes
+                            import base64
+                            image_bytes = base64.b64decode(base64_data)
+                            
+                            return image_bytes
 
             return "No image found in response", 500
             

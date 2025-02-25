@@ -1,4 +1,6 @@
-class StaticLight:
+from gpio_device import gpio_device
+
+class StaticLight(gpio_device):
     def __init__(self,logger, pin: int = 23, debug: bool = False):
         """Initialize GPIO LED controller
         Args:
@@ -41,7 +43,7 @@ class StaticLight:
         """
         return self._is_on
 
-    def cleanup(self) -> None:
+    def cleanup_gpio(self) -> None:
         """Cleanup GPIO resources"""
         if not self._debug:
             import RPi.GPIO as GPIO

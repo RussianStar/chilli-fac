@@ -1,4 +1,6 @@
-class Lux:
+from gpio_device import gpio_device
+
+class Lux(gpio_device):
     def __init__(self, logger, pin: int = 16, freq: int = 1000, debug: bool = False):
         """Initialize PWM LED controller
         Args:
@@ -51,7 +53,7 @@ class Lux:
         """Turn LED to full brightness"""
         self.set_level(100)
         
-    def cleanup(self) -> None:
+    def cleanup_gpio(self) -> None:
         """Cleanup GPIO resources"""
         if not self._debug:
             if self._pwm:

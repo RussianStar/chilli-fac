@@ -1,300 +1,161 @@
-from logging.handlers import RotatingFileHandler
+import re
+from types import resolve_bases
+from aiohttp import web
+import aiohttp_cors
+import jinja2
 import os
-import time
-import logging
-from datetime import datetime
-import sqlite3
-import threading
-import requests
+from aiohttp import web
+import asyncio
 import json
-from  flask  import Flask, render_template, request
-from hydro import Hydro
-from lux import Lux
-from static_light import StaticLight
-from camera import get_camera_bytes,capture_image_data
+from  helper  import is_raspberry_pi, render
+from controller import Controller
+from logger import setup_logging
+from db import DatabaseAdapter
+from state import SystemState
+from camera import get_camera_bytes
+import asyncio
+import aiohttp
+from aiohttp import web
+import aiohttp_jinja2
+import jinja2
+import os
 
+# Global state
+global current_state, db
+
+# Load config
 with open('config.json') as f:
     config = json.load(f)
-# logging interval to database in seconds
-LOGGING_INTERVAL = config['logging_interval']
 
-def setup_logging():
-    # Create logger
-    logger = logging.getLogger('hydro')
-    logger.setLevel(logging.DEBUG)
-
-    # Ensure log directory exists
-    log_dir = 'logs'
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    # Create log file path
-    log_file = os.path.join(log_dir, 'hydro.log')
-
-    # Initialize rotating file handler with modern parameters
-    file_handler = RotatingFileHandler(
-        filename=log_file,
-        mode='a',
-        maxBytes=1024*1024,  # 1MB per file
-        backupCount=5,
-        encoding='utf-8',
-        delay=False
-    )
-    file_handler.setLevel(logging.DEBUG)
-    # Create console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-
-    # Create formatters
-    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    console_formatter = logging.Formatter('%(levelname)s: %(message)s')
-
-    # Add formatters to handlers
-    file_handler.setFormatter(file_formatter)
-    console_handler.setFormatter(console_formatter)
-
-    # Add handlers to logger
-    logger.addHandler(file_handler)
-    logger.addHandler(console_handler)
-
-    return logger
-
-def is_raspberry_pi():
-    try:
-        with open('/proc/device-tree/model') as f:
-            return 'raspberry' in f.read().lower()
-    except:
-        return False
-
-# Initialize Flask app
-app = Flask(__name__)
+# Setup
+app = web.Application() 
 logger = setup_logging()
-debug = not is_raspberry_pi();
+db = DatabaseAdapter(logger, config)
 
+debug = not is_raspberry_pi()
+current_state = SystemState(logger, config, debug)
+ctrl = Controller(db=db, logger=logger, config=config, debug=debug)
 
-wtrctrl = Hydro(logger,config,debug)
-zeus = {int(k):Lux(logger,pin=v, freq=1000, debug=debug) for k,v in config['light_pins'].items()}
-static_lights = {int(k):StaticLight(logger,v, debug=debug) for k,v in config['static_light_pins'].items()}
+# Configure templating
+aiohttp_jinja2.setup(app,
+    loader=jinja2.FileSystemLoader(os.path.join(os.getcwd(), 'templates')))
 
-pump_states = { 1:False}
-light_states = {int(k): False for k,_ in config['light_pins'].items()}
-static_light_states = {int(k): False for k,_ in config['static_light_pins'].items()}
-valve_states ={int(k): False for k,_ in config['valve_pins'].items()}  
-
-CAMERA_ENDPOINTS = config['camera_endpoints']
-
-@app.route('/camera/<int:camera_id>/take/picture', methods=['POST'])
-def take_picture(camera_id):
-    if camera_id < len(CAMERA_ENDPOINTS):
+# Route handlers
+async def take_picture(request):
+    camera_id = int(request.match_info['camera_id'])
+    if camera_id < len(current_state.camera_endpoints):
         try:
-            response = requests.get(f"{CAMERA_ENDPOINTS[camera_id]}/take/picture")
-            
-            if response.status_code == 200:
-                return "Picture taken successfully", 200
-            else:
-                return "Failed to take picture", 500
-            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{current_state.camera_endpoints[camera_id]}/take/picture") as response:
+                    if response.status == 200:
+                        return web.Response(text="Picture taken successfully")
+                    else:
+                        return web.Response(text="Failed to take picture", status=500)
         except Exception as e:
-            return f"Error taking picture: {str(e)}", 500
+            return web.Response(text=f"Error taking picture: {str(e)}", status=500)
+    return web.Response(text="Camera not found", status=404)
+
+async def home(request):
+    return render(request,current_state)
+
+async def water_level(request):
+    global current_state
+    level = int(request.match_info['level'])
+    form = await request.post()
+    duration = int(form.get('duration', 45))
+    current_state = await ctrl.water_level(current_state, level, duration)
+    return render(request, current_state)
+
+async def toggle_static_light(request):
+    global current_state
+    light_id = int(request.match_info['light_id'])
+    current_state = ctrl.set_light(current_state, light_id)
+    return render(request,current_state)
+
+async def set_light_brightness(request):
+    global current_state
+    light_id = int(request.match_info['light_id'])
+    
+    if not request.can_read_body:
+        brightness = 0
+    else:
+        try:
+            form = await request.post()
+            brightness = min(max(int(form.get('brightness', 0)), 0), 100)
+        except (TypeError, ValueError):
+            return web.Response(text="Invalid brightness value", status=400)
             
- 
-@app.route('/')
-def home():
-    return render_template("index.html", 
-                                 valves=valve_states,
-                                 lights=light_states,
-                                 pumps=pump_states,
-                                 static_lights=static_light_states, 
-                                camera_count=len(CAMERA_ENDPOINTS))
+    current_state = ctrl.set_brightness(current_state, light_id, brightness)
+    return render(request, current_state)
 
-
-@app.route('/level/<int:level>/water', methods=['POST'])
-def water_level(level):
-    duration = request.form.get('duration', type=int, default=45)
-    
-    try:
-        wtrctrl.water_level(level, duration)
-        
-        return render_template("index.html",
-                         valves=valve_states,
-                         lights=light_states,
-                         static_lights=static_light_states, 
-                         pumps=pump_states,
-                         camera_count=len(CAMERA_ENDPOINTS))
-                         
-    except ValueError as e:
-        return str(e), 400
-    except Exception as e:
-        return f"Error watering level: {str(e)}", 500
-
-@app.route('/static_light/<int:light_id>/toggle', methods=['POST'])
-def toggle_static_light(light_id):
-    if light_id <= len(static_lights):
-        light_controller = static_lights[light_id]
-        
-        if light_controller.is_on():
-            light_controller.turn_off()
-            static_light_states[light_id] = False
-        else:
-            light_controller.turn_on()
-            static_light_states[light_id] = True
-
-        logger.info(f"Toggling static light #{light_id} to {static_light_states[light_id]}")
-    
-    return render_template("index.html",
-                         valves=valve_states,
-                         lights=light_states,
-                         static_lights=static_light_states,
-                         pumps=pump_states,
-                         camera_count=len(CAMERA_ENDPOINTS))
-
-@app.route('/light/<int:light_id>/brightness', methods=['POST'])
-def set_light_brightness(light_id):
-    # Get brightness value from request (0-100)
-    brightness = request.form.get('brightness', type=int, default=0)
-    
-    # Validate brightness is between 0-100
-    brightness = max(0, min(100, brightness))
-
-    # Get corresponding LED controller
-    if light_id <= len(zeus):
-        led_controller = zeus[light_id]
-
-        # Update light state based on brightness 
-        light_states[light_id] = brightness
-        
-        # Set brightness level (0-100%)
-        led_controller.set_level(brightness)
-
-        logger.info(f"Setting light #{light_id} brightness to {brightness}%")
-    
-    return render_template("index.html",
-                         valves=valve_states,
-                         lights=light_states, 
-                         static_lights=static_light_states, 
-                         pumps=pump_states,
-                         camera_count=len(CAMERA_ENDPOINTS))
-
-@app.route('/camera/<int:camera_id>')
-def get_camera_image(camera_id):
-    if camera_id < len(CAMERA_ENDPOINTS):
-        result = get_camera_bytes(CAMERA_ENDPOINTS[camera_id])
+async def get_camera_image(request):
+    global current_state
+    camera_id = int(request.match_info['camera_id'])
+    if camera_id < len(current_state.camera_endpoints):
+        result = await get_camera_bytes(current_state.camera_endpoints[camera_id])
         if result is None:
-            return f"Error loading camera image.", 500
+            return web.Response(text="Error loading camera image", status=500)
+        return web.Response(body=result, content_type='image/jpeg')
+    return web.Response(text="Camera not found", status=404)
 
-        return result
-            
-    return "Camera not found", 404
+app.router.add_get('/', home)
+app.router.add_post('/camera/{camera_id}/take/picture', take_picture)
+app.router.add_post('/level/{level}/water', water_level)
+app.router.add_post('/static_light/{light_id}/toggle', toggle_static_light)
+app.router.add_post('/light/{light_id}/brightness', set_light_brightness)
+app.router.add_get('/camera/{camera_id}', get_camera_image)
 
+# Setup CORS after routes are added
+cors = aiohttp_cors.setup(app, defaults={
+    "*": aiohttp_cors.ResourceOptions(
+        allow_credentials=True,
+        expose_headers="*",
+        allow_headers="*",
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    )
+})
 
+for route in list(app.router.routes()):
+    cors.add(route)
 
-def init_db():
-    conn = sqlite3.connect('hydro_status.db')
-    c = conn.cursor()
-    
-    # Create status table
-    c.execute('''CREATE TABLE IF NOT EXISTS status
-                 (timestamp TEXT,
-                  valve_states TEXT,
-                  light_states TEXT, 
-                  pump_states TEXT,
-                  static_light_states TEXT)''')
-    
-    # Create camera images table
-    c.execute('''CREATE TABLE IF NOT EXISTS camera_images
-                 (camera_id INTEGER,
-                  timestamp TEXT,
-                  image_data TEXT)''')
-                  
-    conn.commit()
-    conn.close()
-
-def log_status():
-    while True:
-        conn = None
-        try:
-            # Increased timeout and isolation level for better concurrency
-            with sqlite3.connect('hydro_status.db', timeout=30.0, 
-                               isolation_level='EXCLUSIVE') as conn:
-                c = conn.cursor()
-                
-                now = datetime.now().isoformat()
-                
-                # Log system status in a single transaction
-                status = {
-                    'timestamp': now,
-                    'valve_states': str(valve_states),
-                    'light_states': str(light_states), 
-                    'pump_states': str(pump_states),
-                    'static_light_states': str(static_light_states)
-                }
-                
-                c.execute('''INSERT INTO status VALUES 
-                            (:timestamp, :valve_states, :light_states,
-                             :pump_states, :static_light_states)''',
-                         status)
-
-                images = []
-                threads = []
-                for camera_id in range(len(CAMERA_ENDPOINTS)):
-                    t = threading.Thread(target=capture_image_data,
-                                      args=(logger,camera_id, CAMERA_ENDPOINTS[camera_id], images))
-                    threads.append(t)
-                    t.start()
-
-                for t in threads:
-                    t.join()
-                
-                logger.info(f"all threads finished.")
-                logger.info(f"Got {len(images)} items.")
-
-                for camera_id, image_data in images:
-                    logger.info(f"Writing image for camera {camera_id}")
-                    c.execute('''INSERT INTO camera_images 
-                               VALUES (?, ?, ?)''', 
-                               (camera_id, now, image_data))
-                
-                conn.commit()
-                logger.debug('Database write completed successfully')
-
-        except sqlite3.Error as e:
-            logger.error(f"Database error: {e}")
-        except Exception as e:
-            logger.error(f"Error in log_status: {e}")
-        finally:
-            # Ensure connection is closed even if error occurs
-            if conn:
-                try:
-                    conn.close()
-                except Exception as e:
-                    logger.error(f"Error closing connection: {e}")
-
-        # Wait before next logging interval
-        time.sleep(LOGGING_INTERVAL)
-
-def main():
+async def main():
+    global db
     try:
-        # Setup logging
         logger.info('Starting Hydro Control System')
-
-        # Initialize database
         logger.debug('Initializing database')
-        init_db()
+        await db.init_tables()
         
-        logger.debug('Starting status logging thread')
-        status_thread = threading.Thread(target=log_status, daemon=True)
-        status_thread.start()
+        logger.debug('Starting status logging task')
+            
+        async def log_status():
+            while True:
+                await asyncio.sleep(5)
+                await db.log_status(current_state)
+                await asyncio.sleep(370)
         
+        status_task = asyncio.create_task(log_status())
+        
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, '0.0.0.0', 5000)
+        await site.start()
         logger.info('Starting web server on port 5000')
-        app.run(host='0.0.0.0', port=5000)
         
+        # Keep the server running until interrupted
+        try:
+            await asyncio.Event().wait()
+        except KeyboardInterrupt:
+            logger.info('Shutting down server...')
+        finally:
+            await runner.cleanup()
+            status_task.cancel()
+            
     except Exception as e:
         logger.error(f'Fatal error: {str(e)}', exc_info=True)
         raise
     finally:
         logger.info('Cleaning up resources')
-        wtrctrl.cleanup()
+        await current_state.cleanup()
 
 if __name__ == "__main__":
-    main()
-
+    asyncio.run(main())
