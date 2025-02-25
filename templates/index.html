@@ -258,33 +258,13 @@
 
         <!-- Pump Section -->
         <div class="control-section">
-            <h2>Water Levels</h2>
+            <h2>Wasser</h2>
 
-            <!-- Level 1 -->
             <div class="control-item">
-                <h3>Level 1</h3>
-                <button onclick="waterLevel(1)">
-                    Water Level 1
-                </button>
-            </div>
-
-            <!-- Level 2 -->
-            <div class="control-item">
-                <h3>Level 2</h3>
-                <button onclick="waterLevel(2)">
-                    Water Level 2
-                </button>
-            </div>
-
-            <!-- Level 3 -->
-            <div class="control-item">
-                <h3>Level 3</h3>
-                <button onclick="waterLevel(3)">
-                    Water Level 3
-                </button>
+                <h3>Default Sequence</h3>
+                <button onclick="startWateringSequence()">Execute default sequence</button>
             </div>
         </div>
-
     </div>
 
     <div class="camera-grid">
@@ -303,22 +283,17 @@
         {% endfor %}
     </div>
     <script>
-        function waterLevel(level) {
-            // Default duration 5 minutes (300 seconds)
-            const duration = 300;
-
-            fetch(`/level/${level}/water`, {
+        function startWateringSequence() {
+            fetch(`/water/sequence`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `duration=${duration}`
+                }
             })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
                     }
-                    // Reload page to show updated state
                     window.location.reload();
                 })
                 .catch(error => {

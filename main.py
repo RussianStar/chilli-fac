@@ -1,5 +1,3 @@
-import re
-from types import resolve_bases
 from aiohttp import web
 import aiohttp_cors
 import jinja2
@@ -58,12 +56,9 @@ async def take_picture(request):
 async def home(request):
     return render(request,current_state)
 
-async def water_level(request):
+async def watering_sequence(request):
     global current_state
-    level = int(request.match_info['level'])
-    form = await request.post()
-    duration = int(form.get('duration', 45))
-    current_state = await ctrl.water_level(current_state, level, duration)
+    current_state = await ctrl.execute_watering_sequence(current_state)
     return render(request, current_state)
 
 async def toggle_static_light(request):
@@ -100,7 +95,7 @@ async def get_camera_image(request):
 
 app.router.add_get('/', home)
 app.router.add_post('/camera/{camera_id}/take/picture', take_picture)
-app.router.add_post('/level/{level}/water', water_level)
+app.router.add_post('/water/sequence', watering_sequence)
 app.router.add_post('/static_light/{light_id}/toggle', toggle_static_light)
 app.router.add_post('/light/{light_id}/brightness', set_light_brightness)
 app.router.add_get('/camera/{camera_id}', get_camera_image)
