@@ -1,213 +1,642 @@
 <html>
-
 <head>
-    <style>
-        /* Art Nouveau Styling */
-        :root {
-            --primary: #2D5A27;
-            --secondary: #8BA888;
-            --accent: #E6B17E;
-            --bg: #FDF6E9;
-        }
+<style>
+    /* Art Nouveau Styling */
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
+    :root {
+        --primary: #2D6852;
+        --secondary: #AC8A63;
+        --accent: #D6955B;
+        --dark: #1E3F33;
+        --light: #F8F1E3;
+        --gold: #DBAA5C;
+        --divine-glow: rgba(255, 255, 255, 0.9);
+        --divine-halo: rgba(255, 255, 255, 0.7);
+    }
 
-        .brightness-control {
-            margin: 10px 0;
-        }
+    body {
+        background-color: var(--light);
+        color: var(--dark);
+        font-family: 'Cormorant Garamond', serif;
+        margin: 0;
+        padding: 0;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M20,20 Q30,5 50,20 T80,20 Q95,30 80,50 T80,80 Q70,95 50,80 T20,80 Q5,70 20,50 T20,20 Z' fill='none' stroke='%23AC8A6320' stroke-width='0.5'/%3E%3C/svg%3E");
+        background-size: 120px 120px;
+    }
 
-        .brightness-slider {
-            width: 200px;
-            height: 20px;
-            -webkit-appearance: none;
-            background: #d3d3d3;
-            outline: none;
-            border-radius: 10px;
-        }
+    /* Art Nouveau Title */
+    h1 {
+        font-family: 'Playfair Display', serif;
+        text-align: center;
+        font-size: 3.5rem;
+        color: var(--dark);
+        margin: 1.5rem 0;
+        font-weight: 700;
+        position: relative;
+        letter-spacing: 1px;
+        text-shadow: 2px 2px 0px rgba(219, 170, 92, 0.2);
+    }
 
-        .brightness-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 25px;
-            height: 25px;
-            background: #4CAF50;
-            cursor: pointer;
-            border-radius: 50%;
-        }
+    h1::before, h1::after {
+        content: "✦";
+        color: var(--gold);
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2rem;
+    }
 
-        .brightness-value {
-            margin-left: 10px;
-        }
+    h1::before {
+        left: calc(50% - 150px);
+    }
 
-        .state-indicator {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 5px;
-            background: #ff4444;
-            color: white;
-        }
+    h1::after {
+        right: calc(50% - 150px);
+    }
 
-        .state-indicator.active {
-            background: #00C851;
-        }
+    h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--primary);
+        font-size: 1.7rem;
+        margin-bottom: 1.2rem;
+        position: relative;
+        display: inline-block;
+        font-weight: 400;
+        font-style: italic;
+    }
 
-        .camera-container {
-            background: white;
-            padding: 2rem;
-            position: relative;
-            text-align: center;
-            /* Art nouveau border with floral elements */
-            border: none;
-            border-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M10,50 C10,10 90,10 90,50 C90,90 10,90 10,50 Z' fill='none' stroke='%232D5A27' stroke-width='2'/%3E%3Cpath d='M20,50 C20,20 80,20 80,50 C80,80 20,80 20,50 Z' fill='none' stroke='%238BA888' stroke-width='1'/%3E%3C/svg%3E") 30;
-            border-width: 20px;
-            box-shadow: 0 4px 25px rgba(45, 90, 39, 0.15);
-        }
+    h2::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+        height: 2px;
+        width: 100%;
+        background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
 
-        /* Add art nouveau background pattern */
-        .camera-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.05;
-            z-index: 0;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M20,40 Q40,0 60,40 T100,40 T140,40 T180,40' fill='none' stroke='%232D5A27' stroke-width='1'/%3E%3C/svg%3E");
-            background-size: 100px 100px;
-        }
+    h3 {
+        font-family: 'Cormorant Garamond', serif;
+        color: var(--dark);
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
 
-        /* Ensure content stays above the background pattern */
-        .camera-container>* {
-            position: relative;
-            z-index: 1;
-        }
+    /* Main container */
+    .controls {
+        max-width: 1200px;
+        margin: 2rem auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2.5rem;
+        padding: 1rem;
+    }
 
-        /* Add decorative corners */
-        .camera-container::after {
-            content: '';
-            position: absolute;
-            inset: 10px;
-            border: 2px solid var(--secondary);
-            border-radius: 10px;
-            pointer-events: none;
-        }
+    /* Art Nouveau Panel Styling */
+    .control-section {
+        position: relative;
+        background: linear-gradient(135deg, rgba(248, 241, 227, 0.95), rgba(255, 255, 255, 0.95));
+        border-radius: 5px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(30, 63, 51, 0.1);
+    }
 
-        /* Style the image container */
-        .camera-container img {
-            border: 3px solid var(--primary);
-            padding: 5px;
-            background: white;
-            box-shadow: 0 4px 15px rgba(45, 90, 39, 0.2);
-        }
+    /* Art Nouveau Border Frame */
+    .control-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border: 1px solid var(--gold);
+        border-radius: 5px;
+        padding: 15px;
+        pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M0,0 L30,0 Q35,0 35,5 L35,30 Q35,35 30,35 L0,35 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M100,0 L70,0 Q65,0 65,5 L65,30 Q65,35 70,35 L100,35 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M0,100 L30,100 Q35,100 35,95 L35,70 Q35,65 30,65 L0,65 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M100,100 L70,100 Q65,100 65,95 L65,70 Q65,65 70,65 L100,65 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3C/svg%3E");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+        z-index: 0;
+    }
 
-        /* Add hover effects */
-        .camera-container:hover {
-            transform: translateY(-5px);
-            transition: transform 0.3s ease;
-        }
+    .control-section::after {
+        content: "";
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70px;
+        height: 30px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Cpath d='M50,0 C60,10 70,15 100,15 L100,50 L0,50 L0,15 C30,15 40,10 50,0 Z' fill='%23F8F1E3' stroke='%23DBAA5C' stroke-width='1.5'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-size: cover;
+        z-index: 1;
+    }
 
-        body {
-            background-color: var(--bg);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--primary);
-            padding: 2rem;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 50c0 0-20-25-48 6s12 44 12 44-40-10-14-50S50 50 50 50zM50 50c0 0 20-25 48 6s-12 44-12 44 40-10 14-50S50 50 50 50z' fill='%232D5A2710'/%3E%3Cpath d='M50 60c0 0-15 20-5 35s25 5 25 5-20 15-35-5S50 60 50 60zM50 60c0 0 15 20 5 35s-25 5-25 5 20 15 35-5S50 60 50 60z' fill='%232D5A2708'/%3E%3C/svg%3E");
-            background-repeat: repeat;
-            background-size: 200px 200px;
-        }
+    /* Control items */
+    .control-item {
+        position: relative;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 241, 227, 0.8));
+        border-radius: 5px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px rgba(30, 63, 51, 0.07);
+        z-index: 1;
+        border: 1px solid rgba(219, 170, 92, 0.3);
+    }
 
-        .controls {
-            margin: 2rem auto;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
+    /* Divine Light Effect for Light Control Items */
+    .brightness-control {
+        position: relative;
+        margin: 15px 0;
+        transition: all 0.5s ease-in-out;
+    }
 
-        .control-item {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(45, 90, 39, 0.1);
-            border: 1px solid var(--secondary);
-            position: relative;
-            overflow: hidden;
-        }
+    /* The glowing container effect */
+    .control-item:has(.brightness-control) {
+        position: relative;
+        overflow: hidden;
+    }
 
-        .control-item::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
+    /* Divine light radiance based on slider value - ENHANCED WITH GRADIENT COLORS */
+    .control-item:has(.brightness-slider[value="0"]) {
+        box-shadow: 0 4px 15px rgba(30, 63, 51, 0.07);
+    }
+    .control-item:has(.brightness-slider[value^="1"]), 
+    .control-item:has(.brightness-slider[value^="2"]) {
+        box-shadow: 0 0 15px 5px rgba(255, 235, 200, 0.3); /* Warm glow at low values */
+    }
+    .control-item:has(.brightness-slider[value^="3"]), 
+    .control-item:has(.brightness-slider[value^="4"]) {
+        box-shadow: 0 0 20px 10px rgba(255, 235, 200, 0.4); /* Warm glow at low-medium values */
+    }
+    .control-item:has(.brightness-slider[value^="5"]), 
+    .control-item:has(.brightness-slider[value^="6"]) {
+        box-shadow: 0 0 25px 15px rgba(255, 245, 220, 0.5); /* Transitioning to whiter */
+    }
+    .control-item:has(.brightness-slider[value^="7"]), 
+    .control-item:has(.brightness-slider[value^="8"]) {
+        box-shadow: 0 0 35px 25px rgba(245, 250, 255, 0.6); /* Slightly cooler white */
+    }
+    .control-item:has(.brightness-slider[value^="9"]), 
+    .control-item:has(.brightness-slider[value="100"]) {
+        box-shadow: 0 0 150px 85px rgba(235, 245, 255, 0.8); /* Cool blueish white at max */
+    }
 
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
-            margin: 0.5rem 0;
-        }
+    /* Divine Light Inner Glow - ENHANCED WITH COLOR GRADIENT */
+    .control-item:has(.brightness-slider[value="0"])::before {
+        opacity: 0;
+    }
+    .control-item:has(.brightness-slider)::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        z-index: -1;
+        transition: opacity 0.5s ease, background 0.5s ease;
+        opacity: 0;
+    }
 
-        button:hover {
-            background: var(--secondary);
-            transform: translateY(-2px);
-        }
+    .control-item:has(.brightness-slider[value^="1"])::before,
+    .control-item:has(.brightness-slider[value^="2"])::before {
+        opacity: 0.3;
+        background: radial-gradient(
+            circle at center,
+            rgba(255, 230, 180, 0.8), /* Warm amber glow */
+            transparent 70%
+        );
+    }
+    .control-item:has(.brightness-slider[value^="3"])::before,
+    .control-item:has(.brightness-slider[value^="4"])::before {
+        opacity: 0.5;
+        background: radial-gradient(
+            circle at center,
+            rgba(255, 235, 190, 0.8), /* Warm white */
+            transparent 70%
+        );
+    }
+    .control-item:has(.brightness-slider[value^="5"])::before,
+    .control-item:has(.brightness-slider[value^="6"])::before {
+        opacity: 0.7;
+        background: radial-gradient(
+            circle at center,
+            rgba(255, 245, 220, 0.8), /* Neutral white */
+            transparent 70%
+        );
+    }
+    .control-item:has(.brightness-slider[value^="7"])::before,
+    .control-item:has(.brightness-slider[value^="8"])::before {
+        opacity: 0.8;
+        background: radial-gradient(
+            circle at center,
+            rgba(245, 250, 255, 0.8), /* Cool white */
+            transparent 75%
+        );
+    }
+    .control-item:has(.brightness-slider[value^="9"])::before,
+    .control-item:has(.brightness-slider[value="100"])::before {
+        opacity: 1;
+        background: radial-gradient(
+            circle at center,
+            rgba(235, 245, 255, 0.9), /* Blueish white at max */
+            transparent 80%
+        );
+    }
 
-        .camera-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2rem;
-            margin: 2rem auto;
-            max-width: 1200px;
-        }
+    /* Art Nouveau Light Ray Details - ENHANCED WITH STRONGER DIVINE RAYS AND COLOR */
+    .control-item:has(.brightness-slider[value="0"])::after {
+        opacity: 0;
+    }
+    .control-item:has(.brightness-slider)::after {
+        content: "";
+        position: absolute;
+        top: -100%;
+        left: -100%;
+        right: -100%;
+        bottom: -100%;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg%3E%3Cpath d='M50,0 L50,100 M0,50 L100,50' stroke='%23FFFFFF' stroke-width='2'/%3E%3Cpath d='M14.6,14.6 L85.4,85.4 M14.6,85.4 L85.4,14.6' stroke='%23FFFFFF' stroke-width='2'/%3E%3Cpath d='M25,0 L25,100 M75,0 L75,100 M0,25 L100,25 M0,75 L100,75' stroke='%23FFFFFF' stroke-width='1'/%3E%3Cpath d='M8,8 L92,92 M8,92 L92,8' stroke='%23FFFFFF' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E");
+        background-size: 200% 200%;
+        pointer-events: none;
+        transition: opacity 0.5s ease, filter 0.5s ease;
+        z-index: -1;
+        animation: rotate 60s infinite linear;
+    }
 
-        img {
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            box-shadow: 0 4px 15px rgba(45, 90, 39, 0.1);
-            transition: transform 0.3s ease;
-        }
+    /* Graduated ray opacity and color with warmth/coolness filter */
+    .control-item:has(.brightness-slider[value^="1"])::after,
+    .control-item:has(.brightness-slider[value^="2"])::after {
+        opacity: 0.1;
+        filter: sepia(30%); /* Warmer tint */
+    }
+    .control-item:has(.brightness-slider[value^="3"])::after,
+    .control-item:has(.brightness-slider[value^="4"])::after {
+        opacity: 0.2;
+        filter: sepia(20%);
+    }
+    .control-item:has(.brightness-slider[value^="5"])::after,
+    .control-item:has(.brightness-slider[value^="6"])::after {
+        opacity: 0.4;
+        filter: sepia(10%); /* Nearly neutral */
+    }
+    .control-item:has(.brightness-slider[value^="7"])::after,
+    .control-item:has(.brightness-slider[value^="8"])::after {
+        opacity: 0.6;
+        filter: hue-rotate(10deg) saturate(0.8); /* Slightly cooler */
+    }
+    .control-item:has(.brightness-slider[value^="9"])::after,
+    .control-item:has(.brightness-slider[value="100"])::after {
+        opacity: 0.9;
+        filter: hue-rotate(20deg) saturate(0.7); /* Coolest blue-white tint */
+    }
 
-        img:hover {
-            transform: scale(1.02);
-        }
+    /* Add secondary divine ray effect - MODIFIED FOR COLOR GRADIENT */
+    .control-item:has(.brightness-slider[value^="7"])::before,
+    .control-item:has(.brightness-slider[value^="8"])::before {
+        box-shadow: 
+            0 0 0 15px rgba(245, 250, 255, 0.3),
+            0 0 30px 30px rgba(245, 250, 255, 0.2),
+            inset 0 0 40px rgba(245, 250, 255, 0.4);
+    }
 
-        .state-indicator {
-            display: inline-block;
-            padding: 0.3rem 1rem;
-            border-radius: 15px;
-            background: var(--accent);
-            color: white;
-            font-size: 0.9rem;
-        }
+    .control-item:has(.brightness-slider[value^="9"])::before,
+    .control-item:has(.brightness-slider[value="100"])::before {
+        box-shadow: 
+            0 0 0 20px rgba(235, 245, 255, 0.5),
+            0 0 40px 40px rgba(235, 245, 255, 0.3),
+            inset 0 0 50px rgba(235, 245, 255, 0.7);
+    }
 
-        h1 {
-            text-align: center;
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-            position: relative;
-        }
+    /* Divine Light for brightness value text - WITH COLOR GRADIENT */
+    .brightness-value {
+        position: relative;
+        font-family: 'Playfair Display', serif;
+        display: block;
+        text-align: center;
+        font-style: italic;
+        color: var(--primary);
+        font-size: 1.1rem;
+        margin-top: 5px;
+        transition: all 0.3s ease;
+        text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    }
 
-        h1::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 3px;
-            background: var(--primary);
+    .brightness-slider[value^="5"] + .brightness-value,
+    .brightness-slider[value^="6"] + .brightness-value {
+        color: var(--dark);
+        text-shadow: 0 0 8px rgba(255, 245, 220, 0.7); /* Neutral white glow */
+    }
+
+    .brightness-slider[value^="7"] + .brightness-value,
+    .brightness-slider[value^="8"] + .brightness-value {
+        color: var(--dark);
+        text-shadow: 0 0 8px rgba(245, 250, 255, 0.8); /* Cool white glow */
+    }
+
+    .brightness-slider[value^="9"] + .brightness-value,
+    .brightness-slider[value="100"] + .brightness-value {
+        color: var(--dark);
+        text-shadow: 0 0 12px rgba(235, 245, 255, 1), 0 0 5px rgba(235, 245, 255, 1); /* Blue-white glow */
+        font-weight: bold;
+    }
+
+    /* Rotation animation for the light rays */
+    @keyframes rotate {
+        0% {
+            transform: rotate(0deg);
         }
-    </style>
-</head>
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Art Nouveau decorative corners for control items */
+    .control-item::before {
+        content: "";
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 20px;
+        height: 20px;
+        border-top: 2px solid var(--gold);
+        border-left: 2px solid var(--gold);
+        border-top-left-radius: 5px;
+        z-index: 5;
+    }
+
+    .control-item::after {
+        content: "";
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 20px;
+        height: 20px;
+        border-bottom: 2px solid var(--gold);
+        border-right: 2px solid var(--gold);
+        border-bottom-right-radius: 5px;
+        z-index: 5;
+    }
+
+    /* Enhanced Slider styling with divine glow effect */
+    .brightness-slider {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        background: linear-gradient(90deg, var(--dark), var(--gold));
+        border-radius: 10px;
+        outline: none;
+        opacity: 0.8;
+        transition: opacity 0.2s, box-shadow 0.3s;
+        margin: 10px 0;
+        position: relative;
+    }
+
+    .brightness-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 22px;
+        height: 22px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23F8F1E3' stroke='%232D6852' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='6' fill='%23DBAA5C'/%3E%3C/svg%3E");
+        background-size: contain;
+        cursor: pointer;
+        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+        transition: box-shadow 0.3s ease;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Enhanced slider thumb glow - WITH COLOR GRADIENT */
+    .brightness-slider[value^="1"]::-webkit-slider-thumb,
+    .brightness-slider[value^="2"]::-webkit-slider-thumb {
+        box-shadow: 0 0 5px 2px rgba(255, 230, 180, 0.4); /* Warm amber glow */
+    }
+
+    .brightness-slider[value^="3"]::-webkit-slider-thumb,
+    .brightness-slider[value^="4"]::-webkit-slider-thumb {
+        box-shadow: 0 0 8px 4px rgba(255, 235, 190, 0.5); /* Warm white */
+    }
+
+    .brightness-slider[value^="5"]::-webkit-slider-thumb,
+    .brightness-slider[value^="6"]::-webkit-slider-thumb {
+        box-shadow: 0 0 10px 5px rgba(255, 245, 220, 0.6); /* Neutral white */
+    }
+
+    .brightness-slider[value^="7"]::-webkit-slider-thumb,
+    .brightness-slider[value^="8"]::-webkit-slider-thumb {
+        box-shadow: 0 0 15px 8px rgba(245, 250, 255, 0.7); /* Cool white */
+    }
+
+    .brightness-slider[value^="9"]::-webkit-slider-thumb,
+    .brightness-slider[value="100"]::-webkit-slider-thumb {
+        box-shadow: 0 0 20px 10px rgba(235, 245, 255, 0.9); /* Blueish white at max */
+    }
+
+    /* Add divine rays around the slider thumb */
+    .brightness-slider[value^="9"]::-webkit-slider-thumb::before,
+    .brightness-slider[value="100"]::-webkit-slider-thumb::before {
+        content: "";
+        position: absolute;
+        top: -100%;
+        left: -100%;
+        width: 300%;
+        height: 300%;
+        background-image: radial-gradient(circle, rgba(235, 245, 255, 0.9) 0%, rgba(255,255,255,0) 70%);
+        z-index: -1;
+    }
+
+    /* State indicator */
+    .state-indicator {
+        display: inline-block;
+        padding: 0.4rem 1.2rem;
+        border-radius: 20px;
+        font-family: 'Playfair Display', serif;
+        background: #B25F5F;
+        color: var(--light);
+        font-size: 0.9rem;
+        position: relative;
+        font-style: italic;
+        box-shadow: 0 3px 8px rgba(30, 63, 51, 0.1);
+        border: 1px solid rgba(219, 170, 92, 0.3);
+    }
+
+    .state-indicator.active {
+        background: var(--primary);
+        box-shadow: 0 0 15px rgba(219, 170, 92, 0.5);
+    }
+
+    /* Rest of the existing CSS remains the same */
+    /* Button styling */
+    button {
+        font-family: 'Cormorant Garamond', serif;
+        background: var(--primary);
+        color: var(--light);
+        border: none;
+        padding: 0.7rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        margin: 0.8rem 0.5rem 0.5rem 0;
+        position: relative;
+        overflow: hidden;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(30, 63, 51, 0.15);
+        border: 1px solid rgba(219, 170, 92, 0.3);
+    }
+
+    button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12,2 C17.5,2 22,6.5 22,12 C22,17.5 17.5,22 12,22 C6.5,22 2,17.5 2,12 C2,6.5 6.5,2 12,2 Z M12,5 C13.5,7 16,8 19,8 C19,13 16,16 12,18 C8,16 5,13 5,8 C8,8 10.5,7 12,5 Z' fill='rgba(248, 241, 227, 0.05)'/%3E%3C/svg%3E");
+        background-size: 24px 24px;
+        opacity: 0.1;
+    }
+
+    button:hover {
+        background: var(--secondary);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(30, 63, 51, 0.2);
+    }
+
+    .update-btn {
+        background: var(--secondary);
+    }
+
+    .take-picture-btn {
+        background: var(--dark);
+    }
+
+    #cancelWateringBtn {
+        background: #B25F5F;
+    }
+
+    #cancelWateringBtn:hover {
+        background: #C96D6D;
+    }
+
+    /* Camera grid with Art Nouveau styling */
+    .camera-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 3rem;
+        margin: 3rem auto;
+        max-width: 1200px;
+        padding: 0 1.5rem;
+    }
+
+    /* Art Nouveau Camera Container */
+    .camera-container {
+        position: relative;
+        background: linear-gradient(135deg, rgba(248, 241, 227, 0.9), rgba(255, 255, 255, 0.9));
+        padding: 3rem 1.5rem 1.5rem;
+        text-align: center;
+        border-radius: 5px;
+        overflow: visible;
+        box-shadow: 0 10px 30px rgba(30, 63, 51, 0.15);
+    }
+
+    /* Art Nouveau Decorative Frame */
+    .camera-container::before {
+        content: "";
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        border-radius: 8px;
+        /* SVG Art Nouveau Border */
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect x='0' y='0' width='100' height='100' fill='none' stroke='%23DBAA5C' stroke-width='5'/%3E%3Cpath d='M0,20 Q20,10 50,20 T100,20' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M0,80 Q20,90 50,80 T100,80' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M20,0 Q10,20 20,50 T20,100' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M80,0 Q90,20 80,50 T80,100' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Ccircle cx='50' cy='12' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='50' cy='88' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='12' cy='50' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='88' cy='50' r='5' fill='%23DBAA5C'/%3E%3C/svg%3E");
+        background-size: 100% 100%;
+        background-position: center;
+        background-repeat: no-repeat;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Art Nouveau Flourish on Top */
+    .camera-container::after {
+        content: "";
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 60px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 60'%3E%3Cpath d='M60,0 C70,20 90,20 120,15 L120,60 L0,60 L0,15 C30,20 50,20 60,0 Z' fill='%23F8F1E3' stroke='%23DBAA5C' stroke-width='2'/%3E%3Cpath d='M60,15 C45,35 75,35 60,50' fill='none' stroke='%232D6852' stroke-width='1.5' stroke-dasharray='1,2'/%3E%3Ccircle cx='60' cy='25' r='5' fill='%23DBAA5C'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-size: contain;
+        z-index: 2;
+    }
+
+    /* Image styling */
+    .camera-container img {
+        width: 320px;
+        height: 240px;
+        object-fit: cover;
+        border-radius: 3px;
+        box-shadow: 0 6px 16px rgba(30, 63, 51, 0.15);
+        border: 3px solid var(--light);
+        margin-bottom: 1.5rem;
+        position: relative;
+        z-index: 1;
+        transition: all 0.4s ease;
+    }
+
+    .camera-container img:hover {
+        transform: scale(1.03) translateY(-5px);
+        box-shadow: 0 12px 24px rgba(30, 63, 51, 0.2);
+    }
+
+    /* Watering Progress Styling */
+    #wateringProgress {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: rgba(248, 241, 227, 0.7);
+        border-radius: 5px;
+        border: 1px solid var(--gold);
+        position: relative;
+    }
+
+    #progressBar {
+        height: 8px;
+        background: linear-gradient(90deg, var(--primary), var(--gold));
+        border-radius: 4px;
+        transition: width 0.5s;
+    }
+    
+    /* Progress Bar Container */
+    #wateringProgress > div:nth-child(3) {
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 4px;
+        height: 8px;
+        overflow: hidden;
+        border: 1px solid rgba(219, 170, 92, 0.3);
+        margin: 0.5rem 0;
+    }
+
+    /* Status text styling */
+    #wateringStatus, #currentZone, #zonesProgress, #estimatedCompletion, #progressPercent {
+        font-family: 'Cormorant Garamond', serif;
+        color: var(--dark);
+        font-style: italic;
+    }
+
+    /* Decorative Divider */
+    hr {
+        border: none;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        margin: 2rem 0;
+    }
+</style>
 
 <body>
     <h1>Tillis Schillis</h1>
@@ -246,7 +675,7 @@
                     </div>
 
                     <!-- Toggle Button Form -->
-                    <form action="/static_light/{{ light_id }}/toggle" method="POST">
+                    <form action="/light/{{ light_id }}/toggle" method="POST">
                         <button type="submit" class="toggle-button">
                             Toggle
                         </button>
@@ -262,7 +691,7 @@
                 <h3>Watering Control</h3>
                 <button id="startWateringBtn" onclick="startWateringSequence()">Execute default sequence</button>
                 <button id="cancelWateringBtn" onclick="cancelWateringSequence()"
-                    style="display: none; background-color: #ff6347;">Cancel Watering</button>
+                    style="display: none; background-color: #B25F5F;">Cancel Watering</button>
 
                 <div id="wateringProgress" style="display: none; margin-top: 15px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
@@ -271,9 +700,9 @@
                     </div>
                     <div style="width: 100%; background-color: #e0e0e0; border-radius: 5px; overflow: hidden;">
                         <div id="progressBar"
-                            style="height: 20px; width: 0%; background-color: #4CAF50; transition: width 0.5s;"></div>
+                            style="height: 8px; width: 0%; transition: width 0.5s;"></div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                    <div style="display: flex;height: 24px; justify-content: space-between; margin-top: 5px;">
                         <span id="currentZone"></span>
                         <span id="zonesProgress"></span>
                     </div>
@@ -283,197 +712,230 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div class="camera-grid">
-            {% for i in range(camera_count) %}
-            <div class="camera-container">
-                <img id="camera{{i}}" src="/camera/{{i}}" width="320" height="240" />
-                <div>
-                    <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
-                        Update Camera {{i+1}}
-                    </button>
-                    <button class="take-picture-btn" onclick="takePicture({{i}})">
-                        Take Picture
-                    </button>
-                </div>
+    <div class="camera-grid">
+        {% for i in range(camera_count) %}
+        <div class="camera-container">
+            <img id="camera{{i}}" src="/camera/{{i}}" width="320" height="240" />
+            <div>
+                <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
+                    Update Camera {{i+1}}
+                </button>
+                <button class="take-picture-btn" onclick="takePicture({{i}})">
+                    Take Picture
+                </button>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
+    </div>
 
-        <script>
-            let wateringStatusInterval;
+    <script>
+        let wateringStatusInterval;
 
-            function startWateringSequence() {
-                fetch('/water/sequence', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'start',
-                        schedule: 'default'
-                    })
+        function startWateringSequence() {
+            fetch('/water/sequence', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'start',
+                    schedule: 'default'
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'watering_sequence_started' || data.result === 'success') {
-                            // Show progress tracking UI
-                            document.getElementById('wateringProgress').style.display = 'block';
-                            document.getElementById('startWateringBtn').style.display = 'none';
-                            document.getElementById('cancelWateringBtn').style.display = 'inline-block';
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'watering_sequence_started' || data.result === 'success') {
+                        // Show progress tracking UI
+                        document.getElementById('wateringProgress').style.display = 'block';
+                        document.getElementById('startWateringBtn').style.display = 'none';
+                        document.getElementById('cancelWateringBtn').style.display = 'inline-block';
 
-                            // Start polling for status updates
-                            startStatusPolling();
-                        } else {
-                            alert('Failed to start watering: ' + (data.message || 'Unknown error'));
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Failed to start watering sequence: ' + error.message);
-                    });
-            }
-
-            function cancelWateringSequence() {
-                fetch('/water/sequence', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        action: 'cancel'
-                    })
+                        // Start polling for status updates
+                        startStatusPolling();
+                    } else {
+                        alert('Failed to start watering: ' + (data.message || 'Unknown error'));
+                    }
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'cancelled' || data.result === 'success') {
-                            document.getElementById('wateringStatus').textContent = 'Cancelled';
-                            resetWateringUI();
-                        } else {
-                            alert('Failed to cancel: ' + (data.message || 'Unknown error'));
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Failed to cancel watering sequence: ' + error.message);
-                    });
-            }
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to start watering sequence: ' + error.message);
+                });
+        }
 
-            function startStatusPolling() {
-                // First immediate check
-                checkWateringStatus();
+        function cancelWateringSequence() {
+            fetch('/water/sequence', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'cancel'
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'cancelled' || data.result === 'success') {
+                        document.getElementById('wateringStatus').textContent = 'Cancelled';
+                        resetWateringUI();
+                    } else {
+                        alert('Failed to cancel: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to cancel watering sequence: ' + error.message);
+                });
+        }
 
-                // Then start interval
-                wateringStatusInterval = setInterval(checkWateringStatus, 1000);
-            }
+        function startStatusPolling() {
+            // First immediate check
+            checkWateringStatus();
 
-            function checkWateringStatus() {
-                fetch('/water/status')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (!data.watering_state || data.current_state === 'idle') {
-                            resetWateringUI();
-                            return;
-                        }
+            // Then start interval
+            wateringStatusInterval = setInterval(checkWateringStatus, 1000);
+        }
 
-                        const state = data.watering_state;
+        function checkWateringStatus() {
+            fetch('/water/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.watering_state || data.current_state === 'idle') {
+                        resetWateringUI();
+                        return;
+                    }
 
-                        // Calculate progress percentage
-                        // Update progress bar
-                        let progressPercent = state.progress_percent;
-                        const progressBar = document.getElementById('progressBar');
-                        progressBar.style.width = progressPercent + '%';
-                        document.getElementById('progressPercent').textContent = progressPercent + '%';
+                    const state = data.watering_state;
 
-                        // Update status text
-                        let statusText = 'In progress';
-                        if (state.current_state === 'starting') statusText = 'Starting...';
-                        else if (state.current_state === 'running') statusText = 'In progress';
-                        else if (state.current_state === 'completed') statusText = 'Watering completed';
-                        else if (state.current_state === 'cancelled') statusText = 'Watering cancelled';
-                        else if (state.current_state === 'error') statusText = 'Error: ' + (state.error || 'Unknown error');
+                    // Calculate progress percentage
+                    // Update progress bar
+                    let progressPercent = state.progress_percent;
+                    const progressBar = document.getElementById('progressBar');
+                    progressBar.style.width = progressPercent + '%';
+                    document.getElementById('progressPercent').textContent = progressPercent + '%';
 
-                        document.getElementById('wateringStatus').textContent = statusText;
+                    // Update status text
+                    let statusText = 'In progress';
+                    if (state.current_state === 'starting') statusText = 'Starting...';
+                    else if (state.current_state === 'running') statusText = 'In progress';
+                    else if (state.current_state === 'completed') statusText = 'Watering completed';
+                    else if (state.current_state === 'cancelled') statusText = 'Watering cancelled';
+                    else if (state.current_state === 'error') statusText = 'Error: ' + (state.error || 'Unknown error');
 
-                        // Update zone info
-                        if (state.current_zone) {
-                            document.getElementById('currentZone').textContent = 'Current zone: ' + state.current_zone;
-                        }
+                    document.getElementById('wateringStatus').textContent = statusText;
 
-                        // Update zones progress
-                        const completedZones = state.zones_completed;
-                        const totalZones = state.total_zones ;
-                        document.getElementById('zonesProgress').textContent =
-                            `Zones: ${completedZones} / ${totalZones}`;
+                    // Update zone info
+                    if (state.current_zone) {
+                        document.getElementById('currentZone').textContent = 'Current zone: ' + state.current_zone;
+                    }
 
-                        // Update estimated completion
-                        if (state.estimated_completion) {
-                            const estimatedTime = new Date(state.estimated_completion);
-                            document.getElementById('estimatedCompletion').textContent =
-                                `Estimated completion: ${estimatedTime.toLocaleTimeString()}`;
-                        }
+                    // Update zones progress
+                    const completedZones = state.zones_completed;
+                    const totalZones = state.total_zones ;
+                    document.getElementById('zonesProgress').textContent =
+                        `Zones: ${completedZones} / ${totalZones}`;
 
-                        // Check if watering is complete or cancelled
-                        if (['completed', 'cancelled', 'error', 'idle'].includes(state.status)) {
-                            setTimeout(resetWateringUI, 5000); // Reset UI after 5 seconds
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking watering status:', error);
-                    });
-            }
+                    // Update estimated completion
+                    if (state.estimated_completion) {
+                        const estimatedTime = new Date(state.estimated_completion);
+                        document.getElementById('estimatedCompletion').textContent =
+                            `Estimated completion: ${estimatedTime.toLocaleTimeString()}`;
+                    }
 
-            function resetWateringUI() {
-                clearInterval(wateringStatusInterval);
-                document.getElementById('startWateringBtn').style.display = 'inline-block';
-                document.getElementById('cancelWateringBtn').style.display = 'none';
+                    // Check if watering is complete or cancelled
+                    if (['completed', 'cancelled', 'error', 'idle'].includes(state.status)) {
+                        setTimeout(resetWateringUI, 5000); // Reset UI after 5 seconds
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking watering status:', error);
+                });
+        }
 
-                // Keep showing the progress for a moment, will be hidden on next page load
-                // Or could add: document.getElementById('wateringProgress').style.display = 'none';
-            }
+        function resetWateringUI() {
+            clearInterval(wateringStatusInterval);
+            document.getElementById('startWateringBtn').style.display = 'inline-block';
+            document.getElementById('cancelWateringBtn').style.display = 'none';
 
-            // Check status on page load to see if a watering sequence is in progress
-            document.addEventListener('DOMContentLoaded', function () {
-                fetch('/water/status')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.current_state && ['starting', 'running'].includes(data.current_state)) {
-                            // There is an active watering sequence
-                            document.getElementById('wateringProgress').style.display = 'block';
-                            document.getElementById('startWateringBtn').style.display = 'none';
-                            document.getElementById('cancelWateringBtn').style.display = 'inline-block';
-                            startStatusPolling();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error checking initial watering status:', error);
-                    });
+            // Keep showing the progress for a moment, will be hidden on next page load
+            // Or could add: document.getElementById('wateringProgress').style.display = 'none';
+        }
+
+        // Check status on page load to see if a watering sequence is in progress
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('/water/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.current_state && ['starting', 'running'].includes(data.current_state)) {
+                        // There is an active watering sequence
+                        document.getElementById('wateringProgress').style.display = 'block';
+                        document.getElementById('startWateringBtn').style.display = 'none';
+                        document.getElementById('cancelWateringBtn').style.display = 'inline-block';
+                        startStatusPolling();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking initial watering status:', error);
+                });
+        });
+
+        function updateImage(imgId, cameraIndex) {
+            const img = document.getElementById(imgId);
+            const currentSrc = img.src;
+            img.src = `/camera/${cameraIndex}?t=${Date.now()}`;
+        }
+
+        function takePicture(cameraIndex) {
+            fetch(`/camera/${cameraIndex}/capture`, {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(`Picture saved as ${data.filename}`);
+                    } else {
+                        alert('Error taking picture: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to take picture');
+                });
+        }
+        // Function to update the value attribute of sliders when they change
+        document.addEventListener('DOMContentLoaded', function() {
+            // Find all sliders
+            const sliders = document.querySelectorAll('.brightness-slider');
+            
+            // For each slider, update its "value" attribute when value changes
+            sliders.forEach(slider => {
+                // Set the initial value attribute to match the value
+                slider.setAttribute('value', slider.value);
+                
+                // Add event listener for when the slider is moved
+                slider.addEventListener('input', function() {
+                    this.setAttribute('value', this.value);
+                    
+                    // Create divine light animation effect when slider changes
+                    const controlItem = this.closest('.control-item');
+                    controlItem.style.transition = 'box-shadow 0.5s ease-in-out';
+                    
+                    // Subtle pulse animation for higher values
+                    if (this.value > 70) {
+                        controlItem.animate([
+                            { boxShadow: `0 0 ${this.value/3}px ${this.value/10}px rgba(255, 235, 180, ${this.value/120})` },
+                            { boxShadow: `0 0 ${this.value/2.5}px ${this.value/8}px rgba(255, 235, 180, ${this.value/100})` },
+                            { boxShadow: `0 0 ${this.value/3}px ${this.value/10}px rgba(255, 235, 180, ${this.value/120})` }
+                        ], {
+                            duration: 2000,
+                            iterations: 1
+                        });
+                    }
+                });
             });
-
-            function updateImage(imgId, cameraIndex) {
-                const img = document.getElementById(imgId);
-                const currentSrc = img.src;
-                img.src = `/camera/${cameraIndex}?t=${Date.now()}`;
-            }
-
-            function takePicture(cameraIndex) {
-                fetch(`/camera/${cameraIndex}/capture`, {
-                    method: 'POST'
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            alert(`Picture saved as ${data.filename}`);
-                        } else {
-                            alert('Error taking picture: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Failed to take picture');
-                    });
-            }
-        </script>
+        });
+    </script>
 </body>
 
-</html>
+</html
