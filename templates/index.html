@@ -255,73 +255,225 @@
                 {% endfor %}
             </div>
         </div>
-
-        <!-- Pump Section -->
         <div class="control-section">
             <h2>Wasser</h2>
 
             <div class="control-item">
-                <h3>Default Sequence</h3>
-                <button onclick="startWateringSequence()">Execute default sequence</button>
-            </div>
-        </div>
-    </div>
+                <h3>Watering Control</h3>
+                <button id="startWateringBtn" onclick="startWateringSequence()">Execute default sequence</button>
+                <button id="cancelWateringBtn" onclick="cancelWateringSequence()"
+                    style="display: none; background-color: #ff6347;">Cancel Watering</button>
 
-    <div class="camera-grid">
-        {% for i in range(camera_count) %}
-        <div class="camera-container">
-            <img id="camera{{i}}" src="/camera/{{i}}" width="320" height="240" />
-            <div>
-                <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
-                    Update Camera {{i+1}}
-                </button>
-                <button class="take-picture-btn" onclick="takePicture({{i}})">
-                    Take Picture
-                </button>
+                <div id="wateringProgress" style="display: none; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span id="wateringStatus">Starting...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div style="width: 100%; background-color: #e0e0e0; border-radius: 5px; overflow: hidden;">
+                        <div id="progressBar"
+                            style="height: 20px; width: 0%; background-color: #4CAF50; transition: width 0.5s;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <span id="currentZone"></span>
+                        <span id="zonesProgress"></span>
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <span id="estimatedCompletion"></span>
+                    </div>
+                </div>
             </div>
         </div>
-        {% endfor %}
-    </div>
-    <script>
-        function startWateringSequence() {
-            fetch(`/water/sequence`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                }
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    window.location.reload();
+
+        <div class="camera-grid">
+            {% for i in range(camera_count) %}
+            <div class="camera-container">
+                <img id="camera{{i}}" src="/camera/{{i}}" width="320" height="240" />
+                <div>
+                    <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
+                        Update Camera {{i+1}}
+                    </button>
+                    <button class="take-picture-btn" onclick="takePicture({{i}})">
+                        Take Picture
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <script>
+            let wateringStatusInterval;
+
+            function startWateringSequence() {
+                fetch('/water/sequence', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'start',
+                        schedule: 'default'
+                    })
                 })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Failed to water level: ' + error.message);
-                });
-        }
-        function updateImage(imgId, cameraIndex) {
-            const img = document.getElementById(imgId);
-            img.src = '/camera/' + cameraIndex + '?t=' + new Date().getTime();
-        }
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'watering_sequence_started' || data.result === 'success') {
+                            // Show progress tracking UI
+                            document.getElementById('wateringProgress').style.display = 'block';
+                            document.getElementById('startWateringBtn').style.display = 'none';
+                            document.getElementById('cancelWateringBtn').style.display = 'inline-block';
 
-        function takePicture(cameraIndex) {
-            fetch('/camera/' + cameraIndex + '/take/picture', {
-                method: 'POST'
-            })
-                .then(response => {
-                    if (response.ok) {
-                        alert('Picture taken successfully!');
-                    } else {
+                            // Start polling for status updates
+                            startStatusPolling();
+                        } else {
+                            alert('Failed to start watering: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to start watering sequence: ' + error.message);
+                    });
+            }
+
+            function cancelWateringSequence() {
+                fetch('/water/sequence', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'cancel'
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'cancelled' || data.result === 'success') {
+                            document.getElementById('wateringStatus').textContent = 'Cancelled';
+                            resetWateringUI();
+                        } else {
+                            alert('Failed to cancel: ' + (data.message || 'Unknown error'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to cancel watering sequence: ' + error.message);
+                    });
+            }
+
+            function startStatusPolling() {
+                // First immediate check
+                checkWateringStatus();
+
+                // Then start interval
+                wateringStatusInterval = setInterval(checkWateringStatus, 1000);
+            }
+
+            function checkWateringStatus() {
+                fetch('/water/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.watering_state || data.current_state === 'idle') {
+                            resetWateringUI();
+                            return;
+                        }
+
+                        const state = data.watering_state;
+
+                        // Calculate progress percentage
+                        // Update progress bar
+                        let progressPercent = state.progress_percent;
+                        const progressBar = document.getElementById('progressBar');
+                        progressBar.style.width = progressPercent + '%';
+                        document.getElementById('progressPercent').textContent = progressPercent + '%';
+
+                        // Update status text
+                        let statusText = 'In progress';
+                        if (state.current_state === 'starting') statusText = 'Starting...';
+                        else if (state.current_state === 'running') statusText = 'In progress';
+                        else if (state.current_state === 'completed') statusText = 'Watering completed';
+                        else if (state.current_state === 'cancelled') statusText = 'Watering cancelled';
+                        else if (state.current_state === 'error') statusText = 'Error: ' + (state.error || 'Unknown error');
+
+                        document.getElementById('wateringStatus').textContent = statusText;
+
+                        // Update zone info
+                        if (state.current_zone) {
+                            document.getElementById('currentZone').textContent = 'Current zone: ' + state.current_zone;
+                        }
+
+                        // Update zones progress
+                        const completedZones = state.zones_completed;
+                        const totalZones = state.total_zones ;
+                        document.getElementById('zonesProgress').textContent =
+                            `Zones: ${completedZones} / ${totalZones}`;
+
+                        // Update estimated completion
+                        if (state.estimated_completion) {
+                            const estimatedTime = new Date(state.estimated_completion);
+                            document.getElementById('estimatedCompletion').textContent =
+                                `Estimated completion: ${estimatedTime.toLocaleTimeString()}`;
+                        }
+
+                        // Check if watering is complete or cancelled
+                        if (['completed', 'cancelled', 'error', 'idle'].includes(state.status)) {
+                            setTimeout(resetWateringUI, 5000); // Reset UI after 5 seconds
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking watering status:', error);
+                    });
+            }
+
+            function resetWateringUI() {
+                clearInterval(wateringStatusInterval);
+                document.getElementById('startWateringBtn').style.display = 'inline-block';
+                document.getElementById('cancelWateringBtn').style.display = 'none';
+
+                // Keep showing the progress for a moment, will be hidden on next page load
+                // Or could add: document.getElementById('wateringProgress').style.display = 'none';
+            }
+
+            // Check status on page load to see if a watering sequence is in progress
+            document.addEventListener('DOMContentLoaded', function () {
+                fetch('/water/status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.current_state && ['starting', 'running'].includes(data.current_state)) {
+                            // There is an active watering sequence
+                            document.getElementById('wateringProgress').style.display = 'block';
+                            document.getElementById('startWateringBtn').style.display = 'none';
+                            document.getElementById('cancelWateringBtn').style.display = 'inline-block';
+                            startStatusPolling();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking initial watering status:', error);
+                    });
+            });
+
+            function updateImage(imgId, cameraIndex) {
+                const img = document.getElementById(imgId);
+                const currentSrc = img.src;
+                img.src = `/camera/${cameraIndex}?t=${Date.now()}`;
+            }
+
+            function takePicture(cameraIndex) {
+                fetch(`/camera/${cameraIndex}/capture`, {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert(`Picture saved as ${data.filename}`);
+                        } else {
+                            alert('Error taking picture: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
                         alert('Failed to take picture');
-                    }
-                })
-                .catch(error => {
-                    alert('Error taking picture: ' + error);
-                });
-        }
-    </script>
+                    });
+            }
+        </script>
 </body>
 
 </html>

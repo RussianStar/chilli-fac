@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import signal
+from datetime import datetime, timedelta
 import sys
 from typing import Any, Dict, Optional 
 
@@ -63,22 +64,6 @@ class HydroControlApp:
         
         return app
 
-    def _setup_routes(self, app: web.Application) -> None:
-        """Set up route handlers for the application."""
-        routes = [
-            ('GET', '/', self.home),
-            ('POST', '/camera/{camera_id}/take/picture', self.take_picture),
-            ('POST', '/water/sequence', self.watering_sequence),
-            ('POST', '/static_light/{light_id}/toggle', self.toggle_static_light),
-            ('POST', '/light/{light_id}/brightness', self.set_light_brightness),
-            ('GET', '/camera/{camera_id}', self.get_camera_image),
-        ]
-        
-        for method, path, handler in routes:
-            if method == 'GET':
-                app.router.add_get(path, handler)
-            elif method == 'POST':
-                app.router.add_post(path, handler)
 
     def _setup_cors(self, app: web.Application) -> None:
         """Configure Cross-Origin Resource Sharing for the application."""
@@ -95,40 +80,181 @@ class HydroControlApp:
         for route in list(app.router.routes()):
             cors.add(route)
 
-    # Route handlers
-
-    async def home(self, request: web.Request) -> web.Response:
-        """Render the home page with current system state."""
-        return render(request, self.current_state)
-
-    async def take_picture(self, request: web.Request) -> web.Response:
-        """Endpoint to trigger taking a picture from a specific camera."""
-        camera_id = self._parse_camera_id(request)
-        if camera_id is None:
-            return web.Response(text="Invalid camera ID", status=400)
-            
-        if camera_id >= len(self.current_state.camera_endpoints):
-            return web.Response(text="Camera not found", status=404)
-            
-        try:
-            async with aiohttp.ClientSession() as session:
-                camera_url = f"{self.current_state.camera_endpoints[camera_id]}/take/picture"
-                async with session.get(camera_url) as response:
-                    if response.status == 200:
-                        return web.Response(text="Picture taken successfully")
-                    return web.Response(text=f"Failed to take picture: {response.status}", status=500)
-        except Exception as e:
-            self.logger.error(f"Error taking picture: {str(e)}", exc_info=True)
-            return web.Response(text=f"Error taking picture: {str(e)}", status=500)
+    def _setup_routes(self, app: web.Application) -> None:
+        """Set up route handlers for the application."""
+        routes = [
+            ('GET', '/', self.home),
+            ('GET', '/camera/{camera_id}', self.get_camera_image),
+            ('POST', '/camera/{camera_id}/take/picture', self.take_picture),
+            ('POST', '/water/sequence', self.watering_sequence),
+            ('GET', '/water/status', self.get_watering_status),  # Added missing route for status
+            ('POST', '/water/cancel', self.cancel_watering),     # Added missing route for cancellation
+            ('POST', '/light/{light_id}/toggle', self.toggle_static_light),
+            ('POST', '/light/{light_id}/brightness', self.set_light_brightness),
+        ]
+        
+        for method, path, handler in routes:
+            if method == 'GET':
+                app.router.add_get(path, handler)
+            elif method == 'POST':
+                app.router.add_post(path, handler)
 
     async def watering_sequence(self, request: web.Request) -> web.Response:
-        """Endpoint to trigger the watering sequence."""
+        """Endpoint to trigger the watering sequence with progress tracking."""
         try:
-            self.current_state = await self.controller.execute_watering_sequence(self.current_state)
-            return render(request, self.current_state)
+            # Check if a watering sequence is already running
+            if hasattr(self.current_state, 'watering_task') and not self.current_state.watering_task.done():
+                return web.json_response({
+                    'status': 'error',
+                    'message': 'A watering sequence is already in progress'
+                }, status=409)  # Conflict
+                
+            # Initialize watering state with progress tracking
+            self.current_state.watering_state = {
+                'status': 'starting',
+                'progress_percent': 0,
+                'current_zone': None,
+                'zones_completed': 0,
+                'total_zones': self.current_state.wtrctrl.num_valves,
+                'started_at': datetime.now().isoformat(),
+                'estimated_completion': None
+            }
+            
+            # Create a progress tracking callback that updates the watering_state
+            async def progress_tracker(progress: int, zone: int = None, status: str = None):
+                if not hasattr(self.current_state, 'watering_state'):
+                    return
+                    
+                self.current_state.watering_state['progress_percent'] = progress
+                
+                if zone is not None:
+                    self.current_state.watering_state['current_zone'] = f"Zone {zone}"
+                
+                if status is not None:
+                    self.current_state.watering_state['status'] = status
+                    
+                    if status == 'zone_completed' and 'zones_completed' in self.current_state.watering_state:
+                        self.current_state.watering_state['zones_completed'] += 1
+                    
+                    if status == 'in_progress' and progress == 0:
+                        # Calculate and set estimated completion time
+                        total_duration = self.controller.calculate_total_watering_duration(self.current_state)
+                        completion_time = datetime.now() + timedelta(seconds=total_duration)
+                        self.current_state.watering_state['estimated_completion'] = completion_time.isoformat()
+                        
+                    if status == 'completed':
+                        self.current_state.watering_state['completed_at'] = datetime.now().isoformat()
+                        
+                    if status == 'error':
+                        self.current_state.watering_state['error_at'] = datetime.now().isoformat()
+            
+            # Execute watering sequence asynchronously to not block the response
+            task = asyncio.create_task(self.controller.execute_watering_sequence(
+                self.current_state,
+                progress_callback=progress_tracker
+            ))
+            
+            # Set up task completion callback to update status when done
+            def on_task_done(task):
+                try:
+                    task.result()  # This will raise exception if task failed
+                    if hasattr(self.current_state, 'watering_state'):
+                        self.current_state.watering_state['status'] = 'completed'
+                        self.current_state.watering_state['completed_at'] = datetime.now().isoformat()
+                except asyncio.CancelledError:
+                    if hasattr(self.current_state, 'watering_state'):
+                        self.current_state.watering_state['status'] = 'cancelled'
+                except Exception as e:
+                    self.logger.error(f"Watering sequence failed: {str(e)}", exc_info=True)
+                    if hasattr(self.current_state, 'watering_state'):
+                        self.current_state.watering_state['status'] = 'error'
+                        self.current_state.watering_state['error_message'] = str(e)
+                        self.current_state.watering_state['error_at'] = datetime.now().isoformat()
+            
+            task.add_done_callback(on_task_done)  # Add completion callback
+            
+            # Store the task for status checks or cancellation
+            self.current_state.watering_task = task
+            
+            return web.json_response({
+                'status': 'watering_sequence_started',
+                'message': 'Watering sequence has been initiated',
+                'watering_state': self.current_state.watering_state
+            })
+        
         except Exception as e:
-            self.logger.error(f"Error in watering sequence: {str(e)}", exc_info=True)
-            return web.Response(text=f"Error in watering sequence: {str(e)}", status=500)
+            # Update state to reflect error
+            self.current_state.watering_state = {
+                'status': 'error',
+                'error_message': str(e),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            self.logger.error(f"Error initiating watering sequence: {str(e)}", exc_info=True)
+            return web.json_response({
+                'status': 'error',
+                'message': f"Failed to start watering sequence: {str(e)}"
+            }, status=500)
+
+    async def get_watering_status(self, request: web.Request) -> web.Response:
+        """Endpoint to check the current status of an ongoing watering sequence."""
+        if not hasattr(self.current_state, 'watering_state'):
+            return web.json_response({
+                'status': 'no_watering',
+                'message': 'No watering sequence is currently active'
+            })
+        
+        # Check if the task has completed but status wasn't updated
+        if hasattr(self.current_state, 'watering_task'):
+            if self.current_state.watering_task.done():
+                try:
+                    self.current_state.watering_task.result()  # Will raise if there was an exception
+                    if self.current_state.watering_state['status'] not in ['completed', 'cancelled', 'error']:
+                        self.current_state.watering_state['status'] = 'completed'
+                        self.current_state.watering_state['completed_at'] = datetime.now().isoformat()
+                except asyncio.CancelledError:
+                    self.current_state.watering_state['status'] = 'cancelled'
+                except Exception as e:
+                    self.current_state.watering_state['status'] = 'error'
+                    self.current_state.watering_state['error_message'] = str(e)
+        
+        # Return the current watering state with real-time progress
+        return web.json_response({
+            'watering_state': self.current_state.watering_state
+        })
+
+    async def cancel_watering(self, request: web.Request) -> web.Response:
+        """Endpoint to cancel an ongoing watering sequence."""
+        if not hasattr(self.current_state, 'watering_task') or self.current_state.watering_task.done():
+            return web.json_response({
+                'status': 'no_watering',
+                'message': 'No watering sequence is currently active'
+            })
+        
+        try:
+            # Cancel the watering task
+            self.current_state.watering_task.cancel()
+            
+            # Update watering state
+            if hasattr(self.current_state, 'watering_state'):
+                self.current_state.watering_state['status'] = 'cancelled'
+                self.current_state.watering_state['cancelled_at'] = datetime.now().isoformat()
+            
+            # Ensure all valves are closed
+            await self.current_state.wtrctrl.close_all_valves()
+            
+            return web.json_response({
+                'status': 'cancelled',
+                'message': 'Watering sequence has been cancelled',
+                'watering_state': self.current_state.watering_state if hasattr(self.current_state, 'watering_state') else None
+            })
+        
+        except Exception as e:
+            self.logger.error(f"Error cancelling watering sequence: {str(e)}", exc_info=True)
+            return web.json_response({
+                'status': 'error',
+                'message': f"Failed to cancel watering sequence: {str(e)}"
+            }, status=500)
 
     async def toggle_static_light(self, request: web.Request) -> web.Response:
         """Endpoint to toggle a static light on/off."""
@@ -187,8 +313,31 @@ class HydroControlApp:
             self.logger.error(f"Error getting camera image: {str(e)}", exc_info=True)
             return web.Response(text=f"Error loading camera image: {str(e)}", status=500)
 
-    # Helper methods for parameter parsing
+    async def home(self, request: web.Request) -> web.Response:
+        """Render the home page with current system state."""
+        return render(request, self.current_state)
 
+    async def take_picture(self, request: web.Request) -> web.Response:
+        """Endpoint to trigger taking a picture from a specific camera."""
+        camera_id = self._parse_camera_id(request)
+        if camera_id is None:
+            return web.Response(text="Invalid camera ID", status=400)
+            
+        if camera_id >= len(self.current_state.camera_endpoints):
+            return web.Response(text="Camera not found", status=404)
+            
+        try:
+            async with aiohttp.ClientSession() as session:
+                camera_url = f"{self.current_state.camera_endpoints[camera_id]}/take/picture"
+                async with session.get(camera_url) as response:
+                    if response.status == 200:
+                        return web.Response(text="Picture taken successfully")
+                    return web.Response(text=f"Failed to take picture: {response.status}", status=500)
+        except Exception as e:
+            self.logger.error(f"Error taking picture: {str(e)}", exc_info=True)
+            return web.Response(text=f"Error taking picture: {str(e)}", status=500)
+
+    # Helper methods for parameter parsing
     def _parse_camera_id(self, request: web.Request) -> Optional[int]:
         """Extract and validate camera ID from request."""
         try:

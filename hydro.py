@@ -12,6 +12,7 @@ class Hydro(gpio_device):
             180,
             {"valve2": (2, False)},
             {"valve1": (1, True)},
+            180,
             {"pump": (1, False)},
             {"valve1": (1, False)},
         ]

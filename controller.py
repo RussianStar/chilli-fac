@@ -46,32 +46,114 @@ class Controller:
         self._log_status_fire_and_forget(current_state)
         return current_state
 
-    async def execute_watering_sequence(self, current_state, schedule =None ):
-        self._log_status_fire_and_forget(current_state)
-        self._logger.info("Starting watering")
+    def calculate_total_watering_duration(self, current_state):
+        schedule = current_state.wtrctrl.DEFAULT_SCHEDULE
+        return sum(step for step in schedule if not isinstance(step, dict))
 
+    async def execute_watering_sequence(self, current_state, progress_callback=None, schedule=None):
+        """
+        Execute the watering sequence with progress tracking through callback.
+        
+        Args:
+            current_state: The state dictionary containing system state
+            progress_callback: Async function to report progress updates
+            schedule: Optional custom watering schedule, uses DEFAULT_SCHEDULE if None
+        """
+        self._logger.info("Starting watering sequence")
+        
         if schedule is None:
             schedule = current_state.wtrctrl.DEFAULT_SCHEDULE
-            self._logger.info("Using default schedule(top to bottom, 3min)")
-            pass
-
+            self._logger.info("Using default schedule (top to bottom, 3min)")
+        
+        # Calculate total wait time for progress tracking
+        total_wait_time = sum(step for step in schedule if not isinstance(step, dict))
+        elapsed_wait_time = 0
+        
+        # Track active zone
+        current_zone = None
+        
         try:
+            # Update status to in_progress
+            if progress_callback:
+                await progress_callback(0, None, "in_progress")
+            
             for step in schedule:
                 if isinstance(step, dict):
+                    # This is a control step (valve/pump operation)
                     for device, (id, state) in step.items():
                         if 'valve' in device:
-                            current_state.valve_states[id] =current_state.wtrctrl.set_valve(id, state) 
+                            # If turning on a valve, track as the current zone
+                            if state:
+                                current_zone = f"zone_{id}"
+                                if progress_callback:
+                                    await progress_callback(
+                                        int(elapsed_wait_time * 100 / total_wait_time), 
+                                        current_zone, 
+                                        "zone_active"
+                                    )
+                            # If turning off a valve that was active, mark as complete
+                            elif current_zone == f"zone_{id}" and not state:
+                                if progress_callback:
+                                    await progress_callback(
+                                        int(elapsed_wait_time * 100 / total_wait_time), 
+                                        current_zone, 
+                                        "zone_completed"
+                                    )
+                                current_zone = None
+                                
+                            current_state.valve_states[id] = current_state.wtrctrl.set_valve(id, state)
                         elif device == 'pump':
-                            current_state.pump_states[1] =current_state.wtrctrl.set_pump(state)
+                            current_state.pump_states[1] = current_state.wtrctrl.set_pump(state)
                             self._logger.info(f"Setting actor [{device}] to [{state}]")
-                    self._log_status_fire_and_forget(current_state)
                 else:
-                    self._logger.info(f"Waiting for {step}s.")
-                    await asyncio.sleep(step)
-
+                    # This is a wait step
+                    self._logger.info(f"Waiting for {step}s. Progress: {elapsed_wait_time}/{total_wait_time}")
+                    
+                    # Update in smaller increments for smoother progress reporting
+                    chunk_size = 1  # Update every second
+                    for _ in range(step):
+                        await asyncio.sleep(chunk_size)
+                        elapsed_wait_time += chunk_size
+                        
+                        # Report progress
+                        progress_percent = int(elapsed_wait_time * 100 / total_wait_time)
+                        if progress_callback:
+                            await progress_callback(
+                                progress_percent,
+                                current_zone,
+                                "in_progress"
+                            )
+            
+            # Mark sequence as completed
+            if progress_callback:
+                await progress_callback(100, None, "completed")
+                
             return current_state
 
+        except asyncio.CancelledError:
+            self._logger.info("Watering sequence was cancelled")
+            # Report cancellation through callback
+            if progress_callback:
+                await progress_callback(
+                    int(elapsed_wait_time * 100 / total_wait_time), 
+                    current_zone, 
+                    "cancelled"
+                )
+            raise  # Re-raise to properly handle cancellation
+            
+        except Exception as e:
+            self._logger.error(f"Error during watering sequence: {str(e)}", exc_info=True)
+            # Report error through callback
+            if progress_callback:
+                await progress_callback(
+                    int(elapsed_wait_time * 100 / total_wait_time), 
+                    current_zone, 
+                    "error"
+                )
+            raise
+
         finally:
-            for id in range(1,current_state.wtrctrl.num_valves + 1):
+            for id in range(1, current_state.wtrctrl.num_valves + 1):
                 current_state.wtrctrl.set_valve(id, False)
             current_state.wtrctrl.set_pump(False)
+            current_state.wtrctrl.logger[0].info("All valves and pump turned off")

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict 
 
 from hydro import Hydro
 from lux import Lux
@@ -29,6 +29,9 @@ class SystemState:
     static_light_states: Dict[int, bool] = field(init=False, default_factory=dict)
     valve_states: Dict[int, bool] = field(init=False, default_factory=dict)
     camera_endpoints: Dict = field(init=False)
+    
+    watering_progress: Dict = field(init=False)
+    watering_task: Dict = field(init=False)
 
     def __post_init__(self):
         """Initialize components after dataclass initialization"""
@@ -57,7 +60,7 @@ class SystemState:
         }
         
         self.camera_endpoints = self.config['camera_endpoints']
-
+        
     def cleanup(self):
         try:
             all_gpio_based = [
