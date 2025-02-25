@@ -17,6 +17,8 @@ from aiohttp import web
 import aiohttp_jinja2
 import jinja2
 import os
+import signal
+import sys
 
 # Global state
 global current_state, db
@@ -90,7 +92,10 @@ async def get_camera_image(request):
         result = await get_camera_bytes(current_state.camera_endpoints[camera_id])
         if result is None:
             return web.Response(text="Error loading camera image", status=500)
-        return web.Response(body=result, content_type='image/jpeg')
+        image_bytes = result[0] if isinstance(result, tuple) else result
+        if image_bytes is None:
+            return web.Response(text="Error loading camera image", status=500)
+        return web.Response(body=image_bytes, content_type='image/jpeg')
     return web.Response(text="Camera not found", status=404)
 
 app.router.add_get('/', home)
@@ -114,7 +119,7 @@ for route in list(app.router.routes()):
     cors.add(route)
 
 async def main():
-    global db
+    global db, current_state
     try:
         logger.info('Starting Hydro Control System')
         logger.debug('Initializing database')
@@ -124,9 +129,12 @@ async def main():
             
         async def log_status():
             while True:
-                await asyncio.sleep(5)
-                await db.log_status(current_state)
-                await asyncio.sleep(370)
+                try:
+                    await asyncio.sleep(5)
+                    await db.log_status(current_state)
+                    await asyncio.sleep(370)
+                except asyncio.CancelledError:
+                    break
         
         status_task = asyncio.create_task(log_status())
         
@@ -136,7 +144,6 @@ async def main():
         await site.start()
         logger.info('Starting web server on port 5000')
         
-        # Keep the server running until interrupted
         try:
             await asyncio.Event().wait()
         except KeyboardInterrupt:
@@ -144,13 +151,27 @@ async def main():
         finally:
             await runner.cleanup()
             status_task.cancel()
+            try:
+                await status_task
+            except asyncio.CancelledError:
+                pass
             
     except Exception as e:
         logger.error(f'Fatal error: {str(e)}', exc_info=True)
-        raise
     finally:
         logger.info('Cleaning up resources')
-        await current_state.cleanup()
+        await db.close()
+
+
+def handle_sigterm(signum, frame):
+    logger.info("Received SIGTERM signal")
+    sys.exit(0)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    signal.signal(signal.SIGINT, lambda s, f: sys.exit(0))
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info('Received keyboard interrupt, shutting down...')
