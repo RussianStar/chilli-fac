@@ -91,6 +91,8 @@ class HydroControlApp:
             ('POST', '/water/cancel', self.cancel_watering),     # Added missing route for cancellation
             ('POST', '/light/{light_id}/toggle', self.toggle_static_light),
             ('POST', '/light/{light_id}/brightness', self.set_light_brightness),
+            ('POST', '/light/{light_id}/auto', self.set_light_auto_mode),
+            ('GET', '/light/{light_id}/auto', self.get_light_auto_settings),
         ]
         
         for method, path, handler in routes:
@@ -287,6 +289,84 @@ class HydroControlApp:
         except Exception as e:
             self.logger.error(f"Error setting brightness for light {light_id}: {str(e)}", exc_info=True)
             return web.Response(text=f"Error setting brightness: {str(e)}", status=500)
+            
+    async def set_light_auto_mode(self, request: web.Request) -> web.Response:
+        """Endpoint to set auto mode for a light (static or Zeus)."""
+        light_id = self._parse_light_id(request)
+        if light_id is None:
+            return web.Response(text="Invalid light ID", status=400)
+            
+        try:
+            form = await request.post()
+            auto_mode = form.get('auto_mode', 'false').lower() == 'true'
+            
+            if auto_mode:
+                start_time = form.get('start_time')
+                if not start_time or not self._is_valid_time_format(start_time):
+                    return web.Response(text="Invalid start time format. Use HH:MM in 24-hour format.", status=400)
+                    
+                try:
+                    duration_hours = int(form.get('duration_hours', '0'))
+                    if duration_hours <= 0 or duration_hours > 24:
+                        return web.Response(text="Duration must be between 1 and 24 hours.", status=400)
+                except (ValueError, TypeError):
+                    return web.Response(text="Invalid duration format. Must be a number between 1 and 24.", status=400)
+                
+                # Check if this is a Zeus light (has brightness parameter)
+                brightness = None
+                if light_id in self.current_state.zeus:
+                    try:
+                        brightness_str = form.get('brightness')
+                        if brightness_str:
+                            brightness = int(brightness_str)
+                            if brightness < 0 or brightness > 100:
+                                return web.Response(text="Brightness must be between 0 and 100.", status=400)
+                    except (ValueError, TypeError):
+                        return web.Response(text="Invalid brightness format. Must be a number between 0 and 100.", status=400)
+                    
+                print(light_id)
+                self.current_state = self.controller.set_light_auto_mode(
+                    self.current_state, light_id, True, start_time, duration_hours, brightness
+                )
+            else:
+                # Disable auto mode
+                self.current_state = self.controller.set_light_auto_mode(
+                    self.current_state, light_id, False
+                )
+                
+            # Return the rendered HTML page
+            return render(request, self.current_state)
+                
+        except Exception as e:
+            self.logger.error(f"Error setting auto mode for light {light_id}: {str(e)}", exc_info=True)
+            return web.Response(text=f"Error setting auto mode: {str(e)}", status=500)
+            
+    async def get_light_auto_settings(self, request: web.Request) -> web.Response:
+        """Endpoint to get auto mode settings for a static light."""
+        light_id = self._parse_light_id(request)
+        if light_id is None:
+            return web.Response(text="Invalid light ID", status=400)
+            
+        try:
+            settings = self.controller.get_light_auto_settings(self.current_state, light_id)
+            
+            if settings is None:
+                return web.json_response({
+                    'status': 'error',
+                    'message': f'Light #{light_id} not found'
+                }, status=404)
+                
+            return web.json_response({
+                'status': 'success',
+                'settings': settings
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Error getting auto settings for light {light_id}: {str(e)}", exc_info=True)
+            return web.json_response({
+                'status': 'error',
+                'message': f"Error getting auto settings: {str(e)}"
+            }, status=500)
 
     async def get_camera_image(self, request: web.Request) -> web.Response:
         """Endpoint to get an image from a specific camera."""
@@ -362,6 +442,24 @@ class HydroControlApp:
             return min(max(int(form.get('brightness', 0)), 0), 100)
         except (TypeError, ValueError):
             return None
+            
+    def _is_valid_time_format(self, time_str: str) -> bool:
+        """Validate time string format (HH:MM in 24-hour format)."""
+        try:
+            # Check format
+            if len(time_str) != 5 or time_str[2] != ':':
+                return False
+                
+            # Parse hours and minutes
+            hours, minutes = map(int, time_str.split(':'))
+            
+            # Validate ranges
+            if hours < 0 or hours > 23 or minutes < 0 or minutes > 59:
+                return False
+                
+            return True
+        except (ValueError, IndexError):
+            return False
 
     # Application lifecycle methods
 

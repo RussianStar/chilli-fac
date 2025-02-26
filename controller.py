@@ -18,7 +18,7 @@ class Controller:
 
     def set_brightness(self, current_state: SystemState, id, brightness):
 
-        if id <= len(current_state.zeus):
+        if id in current_state.zeus:
             led_controller = current_state.zeus[id]
 
             current_state.light_states[id] = brightness
@@ -30,7 +30,7 @@ class Controller:
         return current_state
 
     def set_light(self, current_state, id):
-        if id <= len(current_state.static_lights):
+        if id in current_state.static_lights:
             light_controller = current_state.static_lights[id]
             
             if light_controller.is_on():
@@ -45,6 +45,106 @@ class Controller:
 
         self._log_status_fire_and_forget(current_state)
         return current_state
+        
+    def set_light_auto_mode(self, current_state, id, auto_mode, start_time=None, duration_hours=None, brightness=None):
+        """
+        Set auto mode for a light (static or Zeus)
+        
+        Args:
+            current_state: The current system state
+            id: The ID of the light to set auto mode for
+            auto_mode: Boolean indicating whether to enable (True) or disable (False) auto mode
+            start_time: Time to turn on the light in 24-hour format (HH:MM)
+            duration_hours: Duration in hours to keep the light on
+            brightness: Brightness level (0-100) for Zeus lights
+        
+        Returns:
+            Updated system state
+        """
+        # Check if this is a static light
+        if id in current_state.static_lights:
+            light_controller = current_state.static_lights[id]
+            
+            if auto_mode:
+                if start_time is None or duration_hours is None:
+                    self._logger.error(f"Cannot enable auto mode for static light #{id}: missing start time or duration")
+                    return current_state
+                    
+                light_controller.set_auto_mode(start_time, duration_hours)
+                current_state.static_light_auto_states[id] = {
+                    "enabled": True,
+                    "start_time": start_time,
+                    "duration_hours": duration_hours
+                }
+                self._logger.info(f"Enabled auto mode for static light #{id}: start at {start_time}, duration {duration_hours}h")
+            else:
+                light_controller.disable_auto_mode()
+                current_state.static_light_auto_states[id] = {
+                    "enabled": False,
+                    "start_time": None,
+                    "duration_hours": None
+                }
+                self._logger.info(f"Disabled auto mode for static light #{id}")
+                
+            self._log_status_fire_and_forget(current_state)
+            
+        # Check if this is a Zeus light
+        elif id in current_state.zeus:
+            light_controller = current_state.zeus[id]
+            
+            if auto_mode:
+                if start_time is None or duration_hours is None:
+                    self._logger.error(f"Cannot enable auto mode for Zeus light #{id}: missing start time or duration")
+                    return current_state
+                
+                # Default brightness to 100% if not specified
+                if brightness is None:
+                    brightness = 100
+                
+                light_controller.set_auto_mode(start_time, duration_hours, brightness)
+                current_state.zeus_auto_states[id] = {
+                    "enabled": True,
+                    "start_time": start_time,
+                    "duration_hours": duration_hours,
+                    "brightness": brightness
+                }
+                self._logger.info(f"Enabled auto mode for Zeus light #{id}: start at {start_time}, duration {duration_hours}h, brightness {brightness}%")
+            else:
+                light_controller.disable_auto_mode()
+                current_state.zeus_auto_states[id] = {
+                    "enabled": False,
+                    "start_time": None,
+                    "duration_hours": None,
+                    "brightness": None
+                }
+                self._logger.info(f"Disabled auto mode for Zeus light #{id}")
+                
+            self._log_status_fire_and_forget(current_state)
+            
+        return current_state
+        
+    def get_light_auto_settings(self, current_state, id):
+        """
+        Get auto mode settings for a light (static or Zeus)
+        
+        Args:
+            current_state: The current system state
+            id: The ID of the light to get auto mode settings for
+            
+        Returns:
+            Dictionary with auto mode settings
+        """
+        # Check if this is a static light
+        if id in current_state.static_lights:
+            light_controller = current_state.static_lights[id]
+            return light_controller.get_auto_settings()
+        
+        # Check if this is a Zeus light
+        elif id in current_state.zeus:
+            light_controller = current_state.zeus[id]
+            return light_controller.get_auto_settings()
+            
+        return None
 
     def calculate_total_watering_duration(self, current_state):
         schedule = current_state.wtrctrl.DEFAULT_SCHEDULE

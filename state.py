@@ -27,6 +27,8 @@ class SystemState:
     pump_states: Dict[int, bool] = field(default_factory=lambda: {1: False})
     light_states: Dict[int, bool] = field(init=False, default_factory=dict) 
     static_light_states: Dict[int, bool] = field(init=False, default_factory=dict)
+    static_light_auto_states: Dict[int, Dict] = field(init=False, default_factory=dict)
+    zeus_auto_states: Dict[int, Dict] = field(init=False, default_factory=dict)
     valve_states: Dict[int, bool] = field(init=False, default_factory=dict)
     camera_endpoints: Dict = field(init=False)
     
@@ -54,6 +56,21 @@ class SystemState:
         }
         self.static_light_states = {
             int(k): False for k in self.config['static_light_pins']
+        }
+        self.static_light_auto_states = {
+            int(k): {
+                "enabled": False,
+                "start_time": None,
+                "duration_hours": None
+            } for k in self.config['static_light_pins']
+        }
+        self.zeus_auto_states = {
+            int(k): {
+                "enabled": False,
+                "start_time": None,
+                "duration_hours": None,
+                "brightness": None
+            } for k in self.config['light_pins']
         }
         self.valve_states = {
             int(k): False for k in self.config['valve_pins']
