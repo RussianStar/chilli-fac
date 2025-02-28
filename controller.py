@@ -193,7 +193,29 @@ class Controller:
             Dictionary with auto mode settings
         """
         watering_controller = current_state.wtrctrl
-        return watering_controller.get_auto_settings()
+        settings = watering_controller.get_auto_settings()
+        settings['durations'] = current_state.watering_durations
+        return settings
+        
+    def set_watering_durations(self, current_state, durations):
+        """
+        Set durations for each watering zone
+        
+        Args:
+            current_state: The current system state
+            durations: Dictionary mapping valve IDs to durations in seconds
+        
+        Returns:
+            Updated system state
+        """
+        # Update the durations in the state
+        for valve_id, duration in durations.items():
+            if valve_id in current_state.watering_durations:
+                current_state.watering_durations[valve_id] = duration
+                
+        self._logger.info(f"Updated watering durations: {current_state.watering_durations}")
+        self._log_status_fire_and_forget(current_state)
+        return current_state
 
     def calculate_total_watering_duration(self, current_state):
         schedule = current_state.wtrctrl.DEFAULT_SCHEDULE
@@ -206,13 +228,14 @@ class Controller:
         Args:
             current_state: The state dictionary containing system state
             progress_callback: Async function to report progress updates
-            schedule: Optional custom watering schedule, uses DEFAULT_SCHEDULE if None
+            schedule: Optional custom watering schedule, uses custom durations if None
         """
         self._logger.info("Starting watering sequence")
         
         if schedule is None:
-            schedule = current_state.wtrctrl.DEFAULT_SCHEDULE
-            self._logger.info("Using default schedule (top to bottom, 3min)")
+            # Create a custom schedule based on the configured durations
+            schedule = current_state.wtrctrl.create_custom_schedule(current_state.watering_durations)
+            self._logger.info(f"Using custom schedule with durations: {current_state.watering_durations}")
         
         # Calculate total wait time for progress tracking
         total_wait_time = sum(step for step in schedule if not isinstance(step, dict))

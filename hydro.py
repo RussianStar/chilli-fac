@@ -187,3 +187,42 @@ class Hydro(gpio_device):
             schedule.run_pending()
             time.sleep(1)
         self.logger[0].debug(f"Scheduler thread stopped for watering")
+        
+    def create_custom_schedule(self, durations):
+        """Create a custom watering schedule based on provided durations
+        
+        Args:
+            durations: Dictionary mapping valve IDs to durations in seconds
+            
+        Returns:
+            List representing the watering schedule
+        """
+        # Start with closing all valves
+        schedule = [{f"valve{i}": (i, False) for i in range(1, self.num_valves + 1)}]
+        
+        # For each valve, add the steps to open it, wait, and close it
+        for valve_id in sorted(durations.keys()):
+            duration = durations[valve_id]
+            
+            # Skip valves with zero duration
+            if duration <= 0:
+                continue
+                
+            # If this is the first valve, turn on the pump
+            if len(schedule) == 1:
+                schedule.append({"pump": (1, True)})
+                
+            # Open the valve
+            schedule.append({f"valve{valve_id}": (valve_id, True)})
+            
+            # Wait for the specified duration
+            schedule.append(duration)
+            
+            # Close the valve
+            schedule.append({f"valve{valve_id}": (valve_id, False)})
+        
+        # Turn off the pump at the end if any valves were watered
+        if len(schedule) > 1:
+            schedule.append({"pump": (1, False)})
+            
+        return schedule

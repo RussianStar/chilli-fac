@@ -31,6 +31,7 @@ class SystemState:
     zeus_auto_states: Dict[int, Dict] = field(init=False, default_factory=dict)
     valve_states: Dict[int, bool] = field(init=False, default_factory=dict)
     watering_auto_state: Dict = field(init=False, default_factory=dict)
+    watering_durations: Dict[int, int] = field(init=False, default_factory=dict)
     camera_endpoints: Dict = field(init=False)
     
     watering_progress: Dict = field(init=False)
@@ -79,6 +80,11 @@ class SystemState:
         self.watering_auto_state = {
             "enabled": False,
             "start_time": None
+        }
+        
+        # Initialize watering durations (default 3 minutes per valve)
+        self.watering_durations = {
+            int(k): 180 for k in self.config['valve_pins']
         }
         
         self.camera_endpoints = self.config['camera_endpoints']

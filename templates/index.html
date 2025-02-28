@@ -836,6 +836,35 @@
                         </button>
                     </form>
                 </div>
+                
+                <!-- Watering Durations Controls -->
+                <div class="watering-durations-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
+                    <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Watering Durations</h4>
+                    
+                    <div style="margin-bottom: 10px; font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
+                        Set how long each zone should be watered (in seconds)
+                    </div>
+                    
+                    <div id="wateringDurationsForm">
+                        {% for valve_id, duration in watering_durations.items() %}
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <label for="duration_{{ valve_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark); min-width: 80px;">
+                                Zone {{ valve_id }}:
+                            </label>
+                            <input type="number" id="duration_{{ valve_id }}" 
+                                value="{{ duration }}" min="0" max="600" step="10"
+                                style="width: 80px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                            <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
+                                seconds
+                            </span>
+                        </div>
+                        {% endfor %}
+                        
+                        <button type="button" class="update-btn" onclick="updateWateringDurations()" style="margin-top: 10px;">
+                            Update Durations
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -890,6 +919,48 @@
             } else {
                 settingsDiv.style.display = 'none';
             }
+        }
+        
+        function updateWateringDurations() {
+            // Collect all duration values
+            const durations = {};
+            {% for valve_id in watering_durations.keys() %}
+            durations['{{ valve_id }}'] = parseInt(document.getElementById('duration_{{ valve_id }}').value) || 0;
+            {% endfor %}
+            
+            // Send to server
+            fetch('/water/durations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(durations)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Flash success message
+                    const form = document.getElementById('wateringDurationsForm');
+                    const successMsg = document.createElement('div');
+                    successMsg.textContent = 'Durations updated successfully!';
+                    successMsg.style.color = 'var(--primary)';
+                    successMsg.style.fontFamily = 'Cormorant Garamond, serif';
+                    successMsg.style.fontStyle = 'italic';
+                    successMsg.style.marginTop = '10px';
+                    form.appendChild(successMsg);
+                    
+                    // Remove message after 3 seconds
+                    setTimeout(() => {
+                        form.removeChild(successMsg);
+                    }, 3000);
+                } else {
+                    alert('Error updating durations: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to update watering durations: ' + error.message);
+            });
         }
 
         function startWateringSequence() {
