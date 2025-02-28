@@ -801,6 +801,41 @@
                         <span id="estimatedCompletion"></span>
                     </div>
                 </div>
+                
+                <!-- Auto Mode Controls -->
+                <div class="auto-mode-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
+                    <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto Mode</h4>
+                    
+                    <!-- Auto Mode Status -->
+                    <div class="state-indicator {{ 'active' if watering_auto_state['enabled'] else '' }}" style="margin-bottom: 10px;">
+                        {{ "ENABLED" if watering_auto_state['enabled'] else "DISABLED" }}
+                    </div>
+                    
+                    <!-- Auto Mode Settings Form -->
+                    <form id="wateringAutoModeForm" action="/water/auto" method="POST">
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label for="watering_auto_mode" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Enable:</label>
+                                <input type="checkbox" id="watering_auto_mode" name="auto_mode" value="true" 
+                                    {{ 'checked' if watering_auto_state['enabled'] else '' }}
+                                    onchange="toggleWateringAutoModeFields()">
+                            </div>
+                            
+                            <div id="wateringAutoModeSettings" style="{{ 'display: block;' if watering_auto_state['enabled'] else 'display: none;' }}">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <label for="watering_start_time" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
+                                    <input type="time" id="watering_start_time" name="start_time" 
+                                        value="{{ watering_auto_state['start_time'] or '06:00' }}"
+                                        style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="update-btn" style="margin-top: 10px;">
+                            Update Auto Mode
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -838,6 +873,17 @@
         function toggleZeusAutoModeFields(lightId) {
             const checkbox = document.getElementById(`zeus_auto_mode${lightId}`);
             const settingsDiv = document.getElementById(`zeusAutoModeSettings${lightId}`);
+            
+            if (checkbox.checked) {
+                settingsDiv.style.display = 'block';
+            } else {
+                settingsDiv.style.display = 'none';
+            }
+        }
+        
+        function toggleWateringAutoModeFields() {
+            const checkbox = document.getElementById('watering_auto_mode');
+            const settingsDiv = document.getElementById('wateringAutoModeSettings');
             
             if (checkbox.checked) {
                 settingsDiv.style.display = 'block';

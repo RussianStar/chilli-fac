@@ -30,6 +30,7 @@ class SystemState:
     static_light_auto_states: Dict[int, Dict] = field(init=False, default_factory=dict)
     zeus_auto_states: Dict[int, Dict] = field(init=False, default_factory=dict)
     valve_states: Dict[int, bool] = field(init=False, default_factory=dict)
+    watering_auto_state: Dict = field(init=False, default_factory=dict)
     camera_endpoints: Dict = field(init=False)
     
     watering_progress: Dict = field(init=False)
@@ -74,6 +75,10 @@ class SystemState:
         }
         self.valve_states = {
             int(k): False for k in self.config['valve_pins']
+        }
+        self.watering_auto_state = {
+            "enabled": False,
+            "start_time": None
         }
         
         self.camera_endpoints = self.config['camera_endpoints']

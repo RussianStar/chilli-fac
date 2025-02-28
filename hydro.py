@@ -1,4 +1,8 @@
 from gpio_device import gpio_device
+import schedule
+import time
+import threading
+from datetime import datetime, timedelta
 
 class Hydro(gpio_device):
 
@@ -22,6 +26,11 @@ class Hydro(gpio_device):
         self.debug = debug
         self.logger = logger,
         self.num_valves = len(gpio_config["valve_pins"])
+        self._auto_mode = False
+        self._start_time = None
+        self._turn_on_job = None
+        self._scheduler_thread = None
+        self._scheduler_running = False
         logger.info("Logger is initialized")
         
         if not debug:
@@ -69,5 +78,112 @@ class Hydro(gpio_device):
 
     def cleanup_gpio(self):
         """Cleanup GPIO on exit"""
-        import RPi.GPIO as GPIO
-        GPIO.cleanup()
+        self.disable_auto_mode()  # Stop scheduler if running
+        if not self.debug:
+            import RPi.GPIO as GPIO
+            GPIO.cleanup()
+            
+    def is_auto_mode(self) -> bool:
+        """Get auto mode state
+        Returns:
+            bool: True if auto mode is enabled, False if disabled
+        """
+        return self._auto_mode
+        
+    def get_auto_settings(self) -> dict:
+        """Get auto mode settings
+        Returns:
+            dict: Dictionary with auto mode settings
+        """
+        return {
+            "auto_mode": self._auto_mode,
+            "start_time": self._start_time
+        }
+        
+    def set_auto_mode(self, start_time: str):
+        """Set auto mode with start time
+        
+        Args:
+            start_time (str): Time to execute watering in 24-hour format (HH:MM)
+        """
+        # Clear any existing schedules
+        self.disable_auto_mode()
+        
+        # Set new auto mode parameters
+        self._auto_mode = True
+        self._start_time = start_time
+        
+        # Schedule the turn on job
+        self._turn_on_job = schedule.every().day.at(start_time).do(self.auto_execute_watering)
+        self.logger[0].info(f"Auto mode enabled for watering. Start: {start_time}")
+        
+        # Start the scheduler thread if not already running
+        self._start_scheduler()
+
+    def disable_auto_mode(self):
+        """Disable auto mode and clear all schedules"""
+        if self._auto_mode:
+            self._auto_mode = False
+            
+            # Clear scheduled jobs
+            if self._turn_on_job:
+                schedule.cancel_job(self._turn_on_job)
+                self._turn_on_job = None
+                
+            self.logger[0].info(f"Auto mode disabled for watering")
+            
+            # Stop scheduler thread if no other devices are using it
+            if self._scheduler_thread and self._scheduler_thread.is_alive():
+                self._scheduler_running = False
+                self._scheduler_thread.join(timeout=2)
+                self._scheduler_thread = None
+                
+    def auto_execute_watering(self):
+        """Execute watering automatically based on schedule"""
+        if self._auto_mode:
+            self.logger[0].info(f"Auto executing watering at {self._start_time}")
+            
+            # Execute the default watering schedule
+            # This is a simplified version - in a real implementation, 
+            # you would need to handle this asynchronously
+            try:
+                # Close all valves first
+                self.close_all_valves()
+                
+                # Execute each step in the schedule
+                for step in self.DEFAULT_SCHEDULE:
+                    if isinstance(step, dict):
+                        # This is a control step (valve/pump operation)
+                        for device, (id, state) in step.items():
+                            if 'valve' in device:
+                                self.set_valve(id, state)
+                            elif device == 'pump':
+                                self.set_pump(state)
+                    else:
+                        # This is a wait step
+                        time.sleep(step)
+                
+                # Make sure all valves are closed at the end
+                self.close_all_valves()
+                self.logger[0].info("Auto watering completed successfully")
+            except Exception as e:
+                self.logger[0].error(f"Error during auto watering: {str(e)}")
+                # Make sure all valves are closed in case of error
+                self.close_all_valves()
+            
+            return schedule.CancelJob  # Don't repeat this specific job instance
+            
+    def _start_scheduler(self):
+        """Start the scheduler thread if not already running"""
+        if not self._scheduler_thread or not self._scheduler_thread.is_alive():
+            self._scheduler_running = True
+            self._scheduler_thread = threading.Thread(target=self._run_scheduler, daemon=True)
+            self._scheduler_thread.start()
+            self.logger[0].debug(f"Started scheduler thread for watering")
+
+    def _run_scheduler(self):
+        """Run the scheduler in a separate thread"""
+        while self._scheduler_running:
+            schedule.run_pending()
+            time.sleep(1)
+        self.logger[0].debug(f"Scheduler thread stopped for watering")

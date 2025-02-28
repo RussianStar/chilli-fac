@@ -145,6 +145,55 @@ class Controller:
             return light_controller.get_auto_settings()
             
         return None
+        
+    def set_watering_auto_mode(self, current_state, auto_mode, start_time=None):
+        """
+        Set auto mode for watering
+        
+        Args:
+            current_state: The current system state
+            auto_mode: Boolean indicating whether to enable (True) or disable (False) auto mode
+            start_time: Time to execute watering in 24-hour format (HH:MM)
+        
+        Returns:
+            Updated system state
+        """
+        watering_controller = current_state.wtrctrl
+        
+        if auto_mode:
+            if start_time is None:
+                self._logger.error("Cannot enable auto mode for watering: missing start time")
+                return current_state
+                
+            watering_controller.set_auto_mode(start_time)
+            current_state.watering_auto_state = {
+                "enabled": True,
+                "start_time": start_time
+            }
+            self._logger.info(f"Enabled auto mode for watering: start at {start_time}")
+        else:
+            watering_controller.disable_auto_mode()
+            current_state.watering_auto_state = {
+                "enabled": False,
+                "start_time": None
+            }
+            self._logger.info("Disabled auto mode for watering")
+            
+        self._log_status_fire_and_forget(current_state)
+        return current_state
+        
+    def get_watering_auto_settings(self, current_state):
+        """
+        Get auto mode settings for watering
+        
+        Args:
+            current_state: The current system state
+            
+        Returns:
+            Dictionary with auto mode settings
+        """
+        watering_controller = current_state.wtrctrl
+        return watering_controller.get_auto_settings()
 
     def calculate_total_watering_duration(self, current_state):
         schedule = current_state.wtrctrl.DEFAULT_SCHEDULE

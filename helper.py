@@ -13,6 +13,7 @@ def render(request,current_state):
                                             'lights': current_state.light_states, 
                                             'static_lights': current_state.static_light_states,
                                             'static_light_auto_states': current_state.static_light_auto_states,
+                                           'watering_auto_state': current_state.watering_auto_state,
                                             'zeus_auto_states': current_state.zeus_auto_states,
                                             'pumps': current_state.pump_states,
                                             'camera_count': len(current_state.camera_endpoints)})

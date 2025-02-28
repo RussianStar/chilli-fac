@@ -89,6 +89,8 @@ class HydroControlApp:
             ('POST', '/water/sequence', self.watering_sequence),
             ('GET', '/water/status', self.get_watering_status),  # Added missing route for status
             ('POST', '/water/cancel', self.cancel_watering),     # Added missing route for cancellation
+            ('POST', '/water/auto', self.set_watering_auto_mode),  # New route for watering auto mode
+            ('GET', '/water/auto', self.get_watering_auto_settings),  # New route for watering auto settings
             ('POST', '/light/{light_id}/toggle', self.toggle_static_light),
             ('POST', '/light/{light_id}/brightness', self.set_light_brightness),
             ('POST', '/light/{light_id}/auto', self.set_light_auto_mode),
@@ -367,6 +369,50 @@ class HydroControlApp:
                 'status': 'error',
                 'message': f"Error getting auto settings: {str(e)}"
             }, status=500)
+            
+    async def set_watering_auto_mode(self, request: web.Request) -> web.Response:
+        """Endpoint to set auto mode for watering."""
+        try:
+            form = await request.post()
+            auto_mode = form.get('auto_mode', 'false').lower() == 'true'
+            
+            if auto_mode:
+                start_time = form.get('start_time')
+                if not start_time or not self._is_valid_time_format(start_time):
+                    return web.Response(text="Invalid start time format. Use HH:MM in 24-hour format.", status=400)
+                
+                self.current_state = self.controller.set_watering_auto_mode(
+                    self.current_state, True, start_time
+                )
+            else:
+                # Disable auto mode
+                self.current_state = self.controller.set_watering_auto_mode(
+                    self.current_state, False
+                )
+                
+            # Return the rendered HTML page
+            return render(request, self.current_state)
+                
+        except Exception as e:
+            self.logger.error(f"Error setting auto mode for watering: {str(e)}", exc_info=True)
+            return web.Response(text=f"Error setting auto mode: {str(e)}", status=500)
+            
+    async def get_watering_auto_settings(self, request: web.Request) -> web.Response:
+        """Endpoint to get auto mode settings for watering."""
+        try:
+            settings = self.controller.get_watering_auto_settings(self.current_state)
+            
+            return web.json_response({
+                'status': 'success',
+                'settings': settings
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Error getting auto settings for watering: {str(e)}", exc_info=True)
+            return web.json_response({
+                'status': 'error',
+                'message': f"Error getting auto settings: {str(e)}"
+            }, status=500)
 
     async def get_camera_image(self, request: web.Request) -> web.Response:
         """Endpoint to get an image from a specific camera."""
@@ -378,6 +424,7 @@ class HydroControlApp:
             return web.Response(text="Camera not found", status=404)
         
         try:
+            print(f"Getting image for {self.current_state.camera_endpoints[camera_id]}");
             result = await get_camera_bytes(self.current_state.camera_endpoints[camera_id])
             
             if result is None:
