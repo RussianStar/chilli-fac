@@ -665,49 +665,58 @@
                 <div class="auto-mode-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
                     <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto Mode</h4>
                     
-                    <!-- Auto Mode Status -->
-                    <div class="state-indicator {{ 'active' if zeus_auto_states[light_id]['enabled'] else '' }}" style="margin-bottom: 10px;">
-                        {{ "ENABLED" if zeus_auto_states[light_id]['enabled'] else "DISABLED" }}
-                    </div>
-                    
-                    <!-- Auto Mode Settings Form -->
+                    <!-- Auto Mode Toggle Button -->
                     <form id="zeusAutoModeForm{{ light_id }}" action="/light/{{ light_id }}/auto" method="POST">
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <label for="zeus_auto_mode{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Enable:</label>
-                                <input type="checkbox" id="zeus_auto_mode{{ light_id }}" name="auto_mode" value="true" 
-                                    {{ 'checked' if zeus_auto_states[light_id]['enabled'] else '' }}
-                                    onchange="toggleZeusAutoModeFields({{ light_id }})">
-                            </div>
-                            
-                            <div id="zeusAutoModeSettings{{ light_id }}" style="{{ 'display: block;' if zeus_auto_states[light_id]['enabled'] else 'display: none;' }}">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                    <label for="zeus_start_time{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
-                                    <input type="time" id="zeus_start_time{{ light_id }}" name="start_time" 
-                                        value="{{ zeus_auto_states[light_id]['start_time'] or '18:00' }}"
-                                        style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                </div>
-                                
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                    <label for="zeus_duration_hours{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration (hours):</label>
-                                    <input type="number" id="zeus_duration_hours{{ light_id }}" name="duration_hours" min="1" max="24" 
-                                        value="{{ zeus_auto_states[light_id]['duration_hours'] or 12 }}"
-                                        style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                </div>
-                                
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                    <label for="zeus_brightness{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Brightness (%):</label>
-                                    <input type="number" id="zeus_brightness{{ light_id }}" name="brightness" min="1" max="100" 
-                                        value="{{ zeus_auto_states[light_id]['brightness'] or 100 }}"
-                                        style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                </div>
-                            </div>
-                        </div>
+                        <input type="hidden" id="zeus_auto_mode{{ light_id }}" name="auto_mode" value="{{ 'true' if not zeus_auto_states[light_id]['enabled'] else 'false' }}">
+                        <input type="hidden" name="start_time" value="{{ zeus_auto_states[light_id]['start_time'] or '18:00' }}">
+                        <input type="hidden" name="duration_hours" value="{{ zeus_auto_states[light_id]['duration_hours'] or 12 }}">
+                        <input type="hidden" name="brightness" value="{{ zeus_auto_states[light_id]['brightness'] or 100 }}">
                         
-                        <button type="submit" class="update-btn" style="margin-top: 10px;">
-                            Update Auto Mode
+                        <button type="submit" class="state-indicator {{ 'active' if zeus_auto_states[light_id]['enabled'] else '' }}" style="width: 100%; cursor: pointer; margin-bottom: 10px;">
+                            {{ "AUTO ON - Click to Disable" if zeus_auto_states[light_id]['enabled'] else "AUTO OFF - Click to Enable" }}
                         </button>
                     </form>
+                    
+                    <!-- Auto Mode Settings (Collapsible) -->
+                    <div class="collapsible-container">
+                        <div class="collapsible-header" onclick="toggleCollapsible('zeus_settings_{{ light_id }}')">
+                            <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
+                            <span class="collapsible-icon">+</span>
+                        </div>
+                        
+                        <div id="zeus_settings_{{ light_id }}" class="collapsible-content" style="display: none;">
+                            <form action="/light/{{ light_id }}/auto" method="POST">
+                                <input type="hidden" name="auto_mode" value="true">
+                                
+                                <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <label for="zeus_start_time{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
+                                        <input type="time" id="zeus_start_time{{ light_id }}" name="start_time" 
+                                            value="{{ zeus_auto_states[light_id]['start_time'] or '18:00' }}"
+                                            style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                    </div>
+                                    
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <label for="zeus_duration_hours{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration (hours):</label>
+                                        <input type="number" id="zeus_duration_hours{{ light_id }}" name="duration_hours" min="1" max="24" 
+                                            value="{{ zeus_auto_states[light_id]['duration_hours'] or 12 }}"
+                                            style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                    </div>
+                                    
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <label for="zeus_brightness{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Brightness (%):</label>
+                                        <input type="number" id="zeus_brightness{{ light_id }}" name="brightness" min="1" max="100" 
+                                            value="{{ zeus_auto_states[light_id]['brightness'] or 100 }}"
+                                            style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                    </div>
+                                    
+                                    <button type="submit" class="update-btn" style="margin-top: 10px;">
+                                        Update Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
             {% endfor %}
@@ -734,42 +743,50 @@
                     <div class="auto-mode-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
                         <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto Mode</h4>
                         
-                        <!-- Auto Mode Status -->
-                        <div class="state-indicator {{ 'active' if static_light_auto_states[light_id]['enabled'] else '' }}" style="margin-bottom: 10px;">
-                            {{ "ENABLED" if static_light_auto_states[light_id]['enabled'] else "DISABLED" }}
-                        </div>
-                        
-                        <!-- Auto Mode Settings Form -->
+                        <!-- Auto Mode Toggle Button -->
                         <form id="autoModeForm{{ light_id }}" action="/light/{{ light_id }}/auto" method="POST">
-                            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <label for="auto_mode{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Enable:</label>
-                                    <input type="checkbox" id="auto_mode{{ light_id }}" name="auto_mode" value="true" 
-                                        {{ 'checked' if static_light_auto_states[light_id]['enabled'] else '' }}
-                                        onchange="toggleAutoModeFields({{ light_id }})">
-                                </div>
-                                
-                                <div id="autoModeSettings{{ light_id }}" style="{{ 'display: block;' if static_light_auto_states[light_id]['enabled'] else 'display: none;' }}">
-                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                        <label for="start_time{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
-                                        <input type="time" id="start_time{{ light_id }}" name="start_time" 
-                                            value="{{ static_light_auto_states[light_id]['start_time'] or '18:00' }}"
-                                            style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                    </div>
-                                    
-                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                        <label for="duration_hours{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration (hours):</label>
-                                        <input type="number" id="duration_hours{{ light_id }}" name="duration_hours" min="1" max="24" 
-                                            value="{{ static_light_auto_states[light_id]['duration_hours'] or 12 }}"
-                                            style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                    </div>
-                                </div>
-                            </div>
+                            <input type="hidden" id="auto_mode{{ light_id }}" name="auto_mode" value="{{ 'true' if not static_light_auto_states[light_id]['enabled'] else 'false' }}">
+                            <input type="hidden" name="start_time" value="{{ static_light_auto_states[light_id]['start_time'] or '18:00' }}">
+                            <input type="hidden" name="duration_hours" value="{{ static_light_auto_states[light_id]['duration_hours'] or 12 }}">
                             
-                            <button type="submit" class="update-btn" style="margin-top: 10px;">
-                                Update Auto Mode
+                            <button type="submit" class="state-indicator {{ 'active' if static_light_auto_states[light_id]['enabled'] else '' }}" style="width: 100%; cursor: pointer; margin-bottom: 10px;">
+                                {{ "AUTO ON - Click to Disable" if static_light_auto_states[light_id]['enabled'] else "AUTO OFF - Click to Enable" }}
                             </button>
                         </form>
+                        
+                        <!-- Auto Mode Settings (Collapsible) -->
+                        <div class="collapsible-container">
+                            <div class="collapsible-header" onclick="toggleCollapsible('static_settings_{{ light_id }}')">
+                                <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
+                                <span class="collapsible-icon">+</span>
+                            </div>
+                            
+                            <div id="static_settings_{{ light_id }}" class="collapsible-content" style="display: none;">
+                                <form action="/light/{{ light_id }}/auto" method="POST">
+                                    <input type="hidden" name="auto_mode" value="true">
+                                    
+                                    <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                            <label for="start_time{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
+                                            <input type="time" id="start_time{{ light_id }}" name="start_time" 
+                                                value="{{ static_light_auto_states[light_id]['start_time'] or '18:00' }}"
+                                                style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                        </div>
+                                        
+                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                            <label for="duration_hours{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration (hours):</label>
+                                            <input type="number" id="duration_hours{{ light_id }}" name="duration_hours" min="1" max="24" 
+                                                value="{{ static_light_auto_states[light_id]['duration_hours'] or 12 }}"
+                                                style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                        </div>
+                                        
+                                        <button type="submit" class="update-btn" style="margin-top: 10px;">
+                                            Update Settings
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -806,63 +823,82 @@
                 <div class="auto-mode-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
                     <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto Mode</h4>
                     
-                    <!-- Auto Mode Status -->
-                    <div class="state-indicator {{ 'active' if watering_auto_state['enabled'] else '' }}" style="margin-bottom: 10px;">
-                        {{ "ENABLED" if watering_auto_state['enabled'] else "DISABLED" }}
-                    </div>
-                    
-                    <!-- Auto Mode Settings Form -->
+                    <!-- Auto Mode Toggle Button -->
                     <form id="wateringAutoModeForm" action="/water/auto" method="POST">
-                        <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <label for="watering_auto_mode" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Enable:</label>
-                                <input type="checkbox" id="watering_auto_mode" name="auto_mode" value="true" 
-                                    {{ 'checked' if watering_auto_state['enabled'] else '' }}
-                                    onchange="toggleWateringAutoModeFields()">
-                            </div>
-                            
-                            <div id="wateringAutoModeSettings" style="{{ 'display: block;' if watering_auto_state['enabled'] else 'display: none;' }}">
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                    <label for="watering_start_time" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
-                                    <input type="time" id="watering_start_time" name="start_time" 
-                                        value="{{ watering_auto_state['start_time'] or '06:00' }}"
-                                        style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                </div>
-                            </div>
-                        </div>
+                        <input type="hidden" id="watering_auto_mode" name="auto_mode" value="{{ 'true' if not watering_auto_state['enabled'] else 'false' }}">
+                        <input type="hidden" name="start_time" value="{{ watering_auto_state['start_time'] or '06:00' }}">
                         
-                        <button type="submit" class="update-btn" style="margin-top: 10px;">
-                            Update Auto Mode
+                        <button type="submit" class="state-indicator {{ 'active' if watering_auto_state['enabled'] else '' }}" style="width: 100%; cursor: pointer; margin-bottom: 10px;">
+                            {{ "AUTO ON - Click to Disable" if watering_auto_state['enabled'] else "AUTO OFF - Click to Enable" }}
                         </button>
                     </form>
+                    
+                    <!-- Auto Mode Settings (Collapsible) -->
+                    <div class="collapsible-container">
+                        <div class="collapsible-header" onclick="toggleCollapsible('watering_settings')">
+                            <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
+                            <span class="collapsible-icon">+</span>
+                        </div>
+                        
+                        <div id="watering_settings" class="collapsible-content" style="display: none;">
+                            <form action="/water/auto" method="POST">
+                                <input type="hidden" name="auto_mode" value="true">
+                                
+                                <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <label for="watering_start_time" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
+                                        <input type="time" id="watering_start_time" name="start_time" 
+                                            value="{{ watering_auto_state['start_time'] or '06:00' }}"
+                                            style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                    </div>
+                                    
+                                    <button type="submit" class="update-btn" style="margin-top: 10px;">
+                                        Update Settings
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Watering Durations Controls -->
                 <div class="watering-durations-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
                     <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Watering Durations</h4>
                     
-                    <div style="margin-bottom: 10px; font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
-                        Set how long each zone should be watered (in seconds)
-                    </div>
-                    
-                    <div id="wateringDurationsForm">
-                        {% for valve_id, duration in watering_durations.items() %}
-                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                            <label for="duration_{{ valve_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark); min-width: 80px;">
-                                Zone {{ valve_id }}:
-                            </label>
-                            <input type="number" id="duration_{{ valve_id }}" 
-                                value="{{ duration }}" min="0" max="600" step="10"
-                                style="width: 80px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                    <!-- Durations Settings (Collapsible) -->
+                    <div class="collapsible-container">
+                        <div class="collapsible-header" onclick="toggleCollapsible('watering_durations')">
                             <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
-                                seconds
+                                Configure Zone Durations
                             </span>
+                            <span class="collapsible-icon">+</span>
                         </div>
-                        {% endfor %}
                         
-                        <button type="button" class="update-btn" onclick="updateWateringDurations()" style="margin-top: 10px;">
-                            Update Durations
-                        </button>
+                        <div id="watering_durations" class="collapsible-content" style="display: none;">
+                            <div style="margin: 15px 0 10px; font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
+                                Set how long each zone should be watered (in seconds)
+                            </div>
+                            
+                            <div id="wateringDurationsForm">
+                                {% for valve_id, duration in watering_durations.items() %}
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <label for="duration_{{ valve_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark); min-width: 80px;">
+                                        Zone {{ valve_id }}:
+                                    </label>
+                                    <input type="number" id="duration_{{ valve_id }}" 
+                                        value="{{ duration }}" min="0" max="600" step="10"
+                                        style="width: 80px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
+                                    <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
+                                        seconds
+                                    </span>
+                                </div>
+                                {% endfor %}
+                                
+                                <button type="button" class="update-btn" onclick="updateWateringDurations()" style="margin-top: 10px;">
+                                    Update Durations
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -885,39 +921,63 @@
         {% endfor %}
     </div>
 
+<style>
+    /* Collapsible container styling */
+    .collapsible-container {
+        margin-top: 5px;
+        border: 1px solid rgba(219, 170, 92, 0.3);
+        border-radius: 5px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .collapsible-header {
+        padding: 10px 15px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(90deg, rgba(248, 241, 227, 0.7), rgba(255, 255, 255, 0.7));
+        border-bottom: 1px solid rgba(219, 170, 92, 0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .collapsible-header:hover {
+        background: linear-gradient(90deg, rgba(248, 241, 227, 0.9), rgba(255, 255, 255, 0.9));
+    }
+    
+    .collapsible-icon {
+        font-family: 'Playfair Display', serif;
+        color: var(--primary);
+        font-size: 1.2rem;
+        font-weight: bold;
+        transition: transform 0.3s ease;
+    }
+    
+    .collapsible-content {
+        padding: 0 15px;
+        background: rgba(255, 255, 255, 0.7);
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+</style>
+
     <script>
         let wateringStatusInterval;
         
-        function toggleAutoModeFields(lightId) {
-            const checkbox = document.getElementById(`auto_mode${lightId}`);
-            const settingsDiv = document.getElementById(`autoModeSettings${lightId}`);
+        function toggleCollapsible(id) {
+            const content = document.getElementById(id);
+            const header = content.previousElementSibling;
+            const icon = header.querySelector('.collapsible-icon');
             
-            if (checkbox.checked) {
-                settingsDiv.style.display = 'block';
+            if (content.style.display === 'none' || content.style.display === '') {
+                content.style.display = 'block';
+                icon.textContent = '−'; // Minus sign
+                icon.style.transform = 'rotate(0deg)';
             } else {
-                settingsDiv.style.display = 'none';
-            }
-        }
-        
-        function toggleZeusAutoModeFields(lightId) {
-            const checkbox = document.getElementById(`zeus_auto_mode${lightId}`);
-            const settingsDiv = document.getElementById(`zeusAutoModeSettings${lightId}`);
-            
-            if (checkbox.checked) {
-                settingsDiv.style.display = 'block';
-            } else {
-                settingsDiv.style.display = 'none';
-            }
-        }
-        
-        function toggleWateringAutoModeFields() {
-            const checkbox = document.getElementById('watering_auto_mode');
-            const settingsDiv = document.getElementById('wateringAutoModeSettings');
-            
-            if (checkbox.checked) {
-                settingsDiv.style.display = 'block';
-            } else {
-                settingsDiv.style.display = 'none';
+                content.style.display = 'none';
+                icon.textContent = '+'; // Plus sign
+                icon.style.transform = 'rotate(0deg)';
             }
         }
         
