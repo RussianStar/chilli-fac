@@ -33,6 +33,7 @@ class SystemState:
     watering_auto_state: Dict = field(init=False, default_factory=dict)
     watering_durations: Dict[int, int] = field(init=False, default_factory=dict)
     camera_endpoints: Dict = field(init=False)
+    camera_rotations: Dict = field(init=False)
     
     watering_progress: Dict = field(init=False)
     watering_task: Dict = field(init=False)
@@ -88,6 +89,7 @@ class SystemState:
         }
         
         self.camera_endpoints = self.config['camera_endpoints']
+        self.camera_rotations = self.config.get('camera_rotations', [0] * len(self.camera_endpoints))
         
     def cleanup(self):
         try:

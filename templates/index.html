@@ -578,8 +578,8 @@
 
     /* Image styling */
     .camera-container img {
-        width: 320px;
-        height: 240px;
+        width: 480px;
+        height: 360px;
         object-fit: cover;
         border-radius: 3px;
         box-shadow: 0 6px 16px rgba(30, 63, 51, 0.15);
@@ -593,6 +593,23 @@
     .camera-container img:hover {
         transform: scale(1.03) translateY(-5px);
         box-shadow: 0 12px 24px rgba(30, 63, 51, 0.2);
+    }
+    
+    /* Camera rotation controls */
+    .camera-rotation-controls {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(219, 170, 92, 0.3);
+    }
+    
+    .rotation-selector {
+        padding: 8px;
+        border: 1px solid var(--gold);
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.7);
+        font-family: 'Cormorant Garamond', serif;
+        color: var(--dark);
+        margin-right: 10px;
     }
 
     /* Watering Progress Styling */
@@ -908,7 +925,7 @@
     <div class="camera-grid">
         {% for i in range(camera_count) %}
         <div class="camera-container">
-            <img id="camera{{i}}" src="/camera/{{i}}" width="320" height="240" />
+            <img id="camera{{i}}" src="/camera/{{i}}" width="480" height="360" />
             <div>
                 <button class="update-btn" onclick="updateImage('camera{{i}}', {{i}})">
                     Update Camera {{i+1}}
@@ -916,6 +933,23 @@
                 <button class="take-picture-btn" onclick="takePicture({{i}})">
                     Take Picture
                 </button>
+            </div>
+            
+            <!-- Camera Rotation Controls -->
+            <div class="camera-rotation-controls">
+                <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Camera Rotation</h4>
+                
+                <form action="/camera/{{i}}/rotation" method="POST" style="display: flex; align-items: center;">
+                    <select name="rotation" class="rotation-selector" onchange="this.form.submit();">
+                        <option value="0" {% if camera_rotations[i] == 0 %}selected{% endif %}>No Rotation</option>
+                        <option value="90" {% if camera_rotations[i] == 90 %}selected{% endif %}>90° Clockwise</option>
+                        <option value="180" {% if camera_rotations[i] == 180 %}selected{% endif %}>180° (Upside Down)</option>
+                        <option value="270" {% if camera_rotations[i] == 270 %}selected{% endif %}>90° Counter-Clockwise</option>
+                    </select>
+                    <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
+                        Rotate camera view
+                    </span>
+                </form>
             </div>
         </div>
         {% endfor %}

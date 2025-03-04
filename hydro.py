@@ -2,7 +2,6 @@ from gpio_device import gpio_device
 import schedule
 import time
 import threading
-from datetime import datetime, timedelta
 
 class Hydro(gpio_device):
 

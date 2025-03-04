@@ -1,7 +1,10 @@
 import asyncio
 import aiohttp
+import io
+from PIL import Image
+import base64
 
-async def capture_image_data(logger,camera_id,endpoint):
+async def capture_image_data(logger, camera_id, endpoint, rotation=0):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(f"{endpoint}/take/picture") as response:
@@ -18,9 +21,23 @@ async def capture_image_data(logger,camera_id,endpoint):
             
             if isinstance(image_bytes, bytes):
                 logger.info(f"Successfully received image from: {camera_id}")
-                import base64
+                
+                # Apply rotation if needed
+                if rotation != 0:
+                    try:
+                        # Convert bytes to PIL Image
+                        img = Image.open(io.BytesIO(image_bytes))
+                        # Rotate image (rotation should be a multiple of 90)
+                        rotated_img = img.rotate(-rotation, expand=True)  # negative for clockwise rotation
+                        # Convert back to bytes
+                        img_byte_arr = io.BytesIO()
+                        rotated_img.save(img_byte_arr, format='JPEG')
+                        image_bytes = img_byte_arr.getvalue()
+                    except Exception as e:
+                        logger.error(f"Error rotating image for camera {camera_id}: {str(e)}")
+                
                 base64_data = base64.b64encode(image_bytes).decode('utf-8')
-                return camera_id,base64_data
+                return camera_id, base64_data
 
         logger.info("Done.")
         return None

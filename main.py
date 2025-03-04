@@ -86,6 +86,7 @@ class HydroControlApp:
             ('GET', '/', self.home),
             ('GET', '/camera/{camera_id}', self.get_camera_image),
             ('POST', '/camera/{camera_id}/take/picture', self.take_picture),
+            ('POST', '/camera/{camera_id}/rotation', self.set_camera_rotation),  # New route for camera rotation
             ('POST', '/water/sequence', self.watering_sequence),
             ('GET', '/water/status', self.get_watering_status),  # Added missing route for status
             ('POST', '/water/cancel', self.cancel_watering),     # Added missing route for cancellation
@@ -462,17 +463,38 @@ class HydroControlApp:
         
         try:
             print(f"Getting image for {self.current_state.camera_endpoints[camera_id]}");
-            result = await get_camera_bytes(self.current_state.camera_endpoints[camera_id])
             
-            if result is None:
-                return web.Response(text="Error loading camera image", status=500)
+            # Get rotation for this camera
+            rotation = 0
+            if hasattr(self.current_state, 'camera_rotations') and camera_id < len(self.current_state.camera_rotations):
+                rotation = self.current_state.camera_rotations[camera_id]
                 
-            image_bytes = result[0] if isinstance(result, tuple) else result
-            
-            if image_bytes is None:
-                return web.Response(text="Error loading camera image", status=500)
+            # Get camera image with rotation
+            endpoint = self.current_state.camera_endpoints[camera_id]
+            if rotation != 0:
+                # If rotation is needed, use capture_image_data which handles rotation
+                from camera import capture_image_data
+                result = await capture_image_data(self.logger, camera_id, endpoint, rotation)
+                if result:
+                    _, base64_data = result
+                    import base64
+                    image_bytes = base64.b64decode(base64_data)
+                    return web.Response(body=image_bytes, content_type='image/jpeg')
+                else:
+                    return web.Response(text="Error loading camera image", status=500)
+            else:
+                # If no rotation, use the original method
+                result = await get_camera_bytes(endpoint)
                 
-            return web.Response(body=image_bytes, content_type='image/jpeg')
+                if result is None:
+                    return web.Response(text="Error loading camera image", status=500)
+                    
+                image_bytes = result[0] if isinstance(result, tuple) else result
+                
+                if image_bytes is None:
+                    return web.Response(text="Error loading camera image", status=500)
+                    
+                return web.Response(body=image_bytes, content_type='image/jpeg')
         except Exception as e:
             self.logger.error(f"Error getting camera image: {str(e)}", exc_info=True)
             return web.Response(text=f"Error loading camera image: {str(e)}", status=500)
@@ -501,6 +523,48 @@ class HydroControlApp:
             self.logger.error(f"Error taking picture: {str(e)}", exc_info=True)
             return web.Response(text=f"Error taking picture: {str(e)}", status=500)
 
+    async def set_camera_rotation(self, request: web.Request) -> web.Response:
+        """Endpoint to set the rotation for a specific camera."""
+        camera_id = self._parse_camera_id(request)
+        if camera_id is None:
+            return web.Response(text="Invalid camera ID", status=400)
+            
+        if camera_id >= len(self.current_state.camera_endpoints):
+            return web.Response(text="Camera not found", status=404)
+            
+        try:
+            form = await request.post()
+            rotation_str = form.get('rotation', '0')
+            
+            try:
+                rotation = int(rotation_str)
+                # Ensure rotation is a multiple of 90
+                if rotation % 90 != 0:
+                    return web.Response(text="Rotation must be a multiple of 90 degrees", status=400)
+                
+                # Update rotation in config file
+                if hasattr(self.current_state, 'camera_rotations'):
+                    self.current_state.camera_rotations[camera_id] = rotation
+                    
+                    # Save to config file
+                    with open(self.CONFIG_FILE, 'r+') as f:
+                        config = json.load(f)
+                        config['camera_rotations'] = self.current_state.camera_rotations
+                        f.seek(0)
+                        f.truncate()
+                        json.dump(config, f, indent=4)
+                    
+                    return render(request, self.current_state)
+                else:
+                    return web.Response(text="Camera rotations not supported", status=500)
+                    
+            except ValueError:
+                return web.Response(text="Invalid rotation value", status=400)
+                
+        except Exception as e:
+            self.logger.error(f"Error setting camera rotation: {str(e)}", exc_info=True)
+            return web.Response(text=f"Error setting camera rotation: {str(e)}", status=500)
+    
     # Helper methods for parameter parsing
     def _parse_camera_id(self, request: web.Request) -> Optional[int]:
         """Extract and validate camera ID from request."""
