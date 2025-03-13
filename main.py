@@ -639,7 +639,7 @@ class HydroControlApp:
 
     async def _log_status(self) -> None:
         """Periodically log system status to the database."""
-        STATUS_LOG_INTERVAL = 375  # seconds (6.25 minutes)
+        STATUS_LOG_INTERVAL = self.config['LOGGING_INTERVAL']  # seconds (6.25 minutes)
         
         while True:
             try:
