@@ -29,7 +29,7 @@ class Lux(gpio_device):
         self._scheduler_thread = None
         self._scheduler_running = False
         
-        self._logger.debug(f'led controller on {self._pin} with frequency of {self._freq}Hz')
+        self._logger.info(f'led controller on {self._pin} with frequency of {self._freq}Hz')
         if not debug:
             import RPi.GPIO as GPIO
             
@@ -171,14 +171,14 @@ class Lux(gpio_device):
             turn_off_time = datetime.now() + timedelta(hours=self._duration_hours)
             self._turn_off_job = schedule.every().day.at(turn_off_time.strftime("%H:%M")).do(self.auto_turn_off)
             
-            self._logger.debug(f"Auto turning on light at {self._start_time} for {self._duration_hours} hours with brightness {self._auto_brightness}%")
+            self._logger.info(f"Auto turning on light at {self._start_time} for {self._duration_hours} hours with brightness {self._auto_brightness}%")
             return schedule.CancelJob  # Don't repeat this specific job instance
 
     def auto_turn_off(self):
         """Turn off light automatically after duration"""
         if self._auto_mode:
             self.turn_off()
-            self._logger.debug(f"Auto turning off light after {self._duration_hours} hours")
+            self._logger.info(f"Auto turning off light after {self._duration_hours} hours")
             self._turn_off_job = None
             return schedule.CancelJob  # Don't repeat this specific job instance
 
@@ -188,14 +188,14 @@ class Lux(gpio_device):
             self._scheduler_running = True
             self._scheduler_thread = threading.Thread(target=self._run_scheduler, daemon=True)
             self._scheduler_thread.start()
-            self._logger.debug(f"Started scheduler thread for light {self._pin}")
+            self._logger.info(f"Started scheduler thread for light {self._pin}")
 
     def _run_scheduler(self):
         """Run the scheduler in a separate thread"""
         while self._scheduler_running:
             schedule.run_pending()
             time.sleep(1)
-        self._logger.debug(f"Scheduler thread stopped for light {self._pin}")
+        self._logger.info(f"Scheduler thread stopped for light {self._pin}")
         
     def _check_if_should_be_on(self):
         """Check if the light should be on based on current time and auto settings"""
