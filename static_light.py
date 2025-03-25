@@ -5,11 +5,13 @@ import threading
 from datetime import datetime, timedelta
 
 class StaticLight(gpio_device):
-    def __init__(self, logger, pin: int = 23, debug: bool = False):
+    def __init__(self, logger, pin: int = 23, debug: bool = False, scheduler=None):
         """Initialize GPIO LED controller
         Args:
-            pin (int): GPIO pin number (default 16) 
+            logger: Logger instance
+            pin (int): GPIO pin number (default 23)
             debug (bool): Run in debug mode without GPIO (default False)
+            scheduler: Optional scheduler instance (for testing)
         """
         self._pin = pin
         self._is_on = False
@@ -22,6 +24,7 @@ class StaticLight(gpio_device):
         self._turn_on_job = None
         self._scheduler_thread = None
         self._scheduler_running = False
+        self._scheduler = scheduler if scheduler is not None else schedule
         
         if not debug:
             import RPi.GPIO as GPIO
@@ -95,7 +98,7 @@ class StaticLight(gpio_device):
         self._duration_hours = duration_hours
         
         # Schedule the turn on job
-        self._turn_on_job = schedule.every().day.at(start_time).do(self.auto_turn_on)
+        self._turn_on_job = self._scheduler.every().day.at(start_time).do(self.auto_turn_on)
         self._logger.info(f"Auto mode enabled for light {self._pin}. Start: {start_time}, Duration: {duration_hours}h")
         
         # Start the scheduler thread if not already running
@@ -111,11 +114,11 @@ class StaticLight(gpio_device):
             
             # Clear scheduled jobs
             if self._turn_on_job:
-                schedule.cancel_job(self._turn_on_job)
+                self._scheduler.cancel_job(self._turn_on_job)
                 self._turn_on_job = None
                 
             if self._turn_off_job:
-                schedule.cancel_job(self._turn_off_job)
+                self._scheduler.cancel_job(self._turn_off_job)
                 self._turn_off_job = None
                 
             self._logger.info(f"Auto mode disabled for light {self._pin}")
@@ -126,8 +129,12 @@ class StaticLight(gpio_device):
                 self._scheduler_thread.join(timeout=2)
                 self._scheduler_thread = None
 
-    def auto_turn_on(self):
-        """Turn on light automatically based on schedule"""
+    def auto_turn_on(self, current_time=None):
+        """Turn on light automatically based on schedule
+        
+        Args:
+            current_time: Optional datetime to use instead of datetime.now() (for testing)
+        """
         if self._auto_mode:
             self.turn_on()
             
@@ -136,11 +143,12 @@ class StaticLight(gpio_device):
                 schedule.cancel_job(self._turn_off_job)
             
             # Schedule turn off after duration
-            turn_off_time = datetime.now() + timedelta(hours=self._duration_hours)
-            self._turn_off_job = schedule.every().day.at(turn_off_time.strftime("%H:%M")).do(self.auto_turn_off)
+            now = current_time if current_time is not None else datetime.now()
+            turn_off_time = now + timedelta(hours=self._duration_hours)
+            self._turn_off_job = self._scheduler.every().day.at(turn_off_time.strftime("%H:%M")).do(self.auto_turn_off)
             
-            self._logger.info(f"Auto turning on light at {self._start_time} for {self._duration_hours} hours")
-            return schedule.CancelJob  # Don't repeat this specific job instance
+            log_time = self._start_time if current_time is None else current_time.strftime("%H:%M")
+            self._logger.info(f"Auto turning on light at {log_time} for {self._duration_hours} hours")
 
     def auto_turn_off(self):
         """Turn off light automatically after duration"""
@@ -148,7 +156,6 @@ class StaticLight(gpio_device):
             self.turn_off()
             self._logger.info(f"Auto turning off light after {self._duration_hours} hours")
             self._turn_off_job = None
-            return schedule.CancelJob  # Don't repeat this specific job instance
 
     def _start_scheduler(self):
         """Start the scheduler thread if not already running"""
@@ -187,13 +194,13 @@ class StaticLight(gpio_device):
                     # Schedule turn off
                     if current_time <= end_time:
                         seconds_until_off = (end_time - current_time).total_seconds()
-                        self._turn_off_job = schedule.every(seconds_until_off).seconds.do(self.auto_turn_off)
+                        self._turn_off_job = self._scheduler.every(seconds_until_off).seconds.do(self.auto_turn_off)
             else:
                 # If current time is between start and end time, light should be on
                 if start_time <= current_time <= end_time:
                     self.turn_on()
                     # Schedule turn off
                     seconds_until_off = (end_time - current_time).total_seconds()
-                    self._turn_off_job = schedule.every(seconds_until_off).seconds.do(self.auto_turn_off)
+                    self._turn_off_job = self._scheduler.every(seconds_until_off).seconds.do(self.auto_turn_off)
         except Exception as e:
             self._logger.error(f"Error checking if light should be on: {str(e)}")
