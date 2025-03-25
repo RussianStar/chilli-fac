@@ -221,6 +221,31 @@ class Controller:
         schedule = current_state.wtrctrl.DEFAULT_SCHEDULE
         return sum(step for step in schedule if not isinstance(step, dict))
 
+    def check_and_execute_watering(self, current_state: SystemState):
+        """
+        Check watering triggers and execute watering if needed
+        
+        Args:
+            current_state: Current system state
+            
+        Returns:
+            Updated system state
+        """
+        for stage, should_water in current_state.watering_triggers.items():
+            if should_water:
+                # Set custom 300s duration for this stage
+                durations = {stage: 300}
+                current_state = self.set_watering_durations(current_state, durations)
+                
+                # Execute watering sequence
+                current_state = self.execute_watering_sequence(current_state)
+                
+                # Reset trigger
+                current_state.watering_triggers[stage] = False
+                self._logger.info(f"Executed watering for stage {stage} based on sensor trigger")
+                
+        return current_state
+
     async def execute_watering_sequence(self, current_state, progress_callback=None, schedule=None):
         """
         Execute the watering sequence with progress tracking through callback.

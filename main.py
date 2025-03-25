@@ -41,6 +41,12 @@ class HydroControlApp:
         )
         self.app = self._create_web_app()
         self.status_task = None
+        
+        # Initialize MQTT client if configured
+        if 'mqtt' in self.config:
+            from mqtt_client import MQTTClient
+            self.mqtt_client = MQTTClient(self.current_state, self.config)
+            self.mqtt_client.connect()
 
     @classmethod
     def _load_config(cls) -> Dict[str, Any]:
@@ -96,6 +102,8 @@ class HydroControlApp:
             ('POST', '/light/{light_id}/brightness', self.set_light_brightness),
             ('POST', '/light/{light_id}/auto', self.set_light_auto_mode),
             ('GET', '/light/{light_id}/auto', self.get_light_auto_settings),
+            ('POST', '/sensor/config', self.set_sensor_config),
+            ('POST', '/sensor/toggle', self.toggle_sensor_active),
         ]
         
         for method, path, handler in routes:
@@ -479,6 +487,7 @@ class HydroControlApp:
 
     async def home(self, request: web.Request) -> web.Response:
         """Render the home page with current system state."""
+        print(self.current_state)
         return render(request, self.current_state)
 
     async def take_picture(self, request: web.Request) -> web.Response:
@@ -500,6 +509,51 @@ class HydroControlApp:
         except Exception as e:
             self.logger.error(f"Error taking picture: {str(e)}", exc_info=True)
             return web.Response(text=f"Error taking picture: {str(e)}", status=500)
+
+    async def set_sensor_config(self, request: web.Request) -> web.Response:
+        """Endpoint to configure sensor parameters."""
+        try:
+            form = await request.post()
+            sensor_id = form.get('sensor_id')
+            stage = int(form.get('stage'))
+            min_moisture = float(form.get('min_moisture'))
+            
+            if not sensor_id or stage not in [1, 2, 3] or min_moisture < 0:
+                return web.Response(text="Invalid sensor configuration", status=400)
+                
+            # Update sensor config in state
+            self.current_state.sensor_configs[sensor_id] = {
+                'stage': stage,
+                'min_moisture': min_moisture,
+                'active': True  # Default to active when added
+            }
+            
+            # Return to main page
+            return render(request, self.current_state)
+            
+        except Exception as e:
+            self.logger.error(f"Error setting sensor config: {str(e)}", exc_info=True)
+            return web.Response(text=f"Error setting sensor config: {str(e)}", status=500)
+            
+    async def toggle_sensor_active(self, request: web.Request) -> web.Response:
+        """Endpoint to toggle sensor active state."""
+        try:
+            form = await request.post()
+            sensor_id = form.get('sensor_id')
+            
+            if not sensor_id or sensor_id not in self.current_state.sensor_configs:
+                return web.Response(text="Invalid sensor ID", status=400)
+                
+            # Toggle active state
+            current_active = self.current_state.sensor_configs[sensor_id].get('active', True)
+            self.current_state.sensor_configs[sensor_id]['active'] = not current_active
+            
+            # Return to main page
+            return render(request, self.current_state)
+            
+        except Exception as e:
+            self.logger.error(f"Error toggling sensor active state: {str(e)}", exc_info=True)
+            return web.Response(text=f"Error toggling sensor active state: {str(e)}", status=500)
 
     # Helper methods for parameter parsing
     def _parse_camera_id(self, request: web.Request) -> Optional[int]:

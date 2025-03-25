@@ -641,6 +641,68 @@
 <body>
     <h1>Tillis Schillis</h1>
     <div class="controls">
+        <!-- Sensor Configuration Section -->
+        <div class="control-section">
+            <h2>Sensor Configuration</h2>
+            <!-- Add Sensor Form -->
+            <div class="control-item">
+                <h3>Add New Sensor</h3>
+                <form id="sensor-form" action="/sensor/config" method="POST">
+                    <div style="margin-bottom: 15px;">
+                        <input type="text" name="sensor_id" placeholder="Sensor ID" required
+                            style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7); width: 100%; margin-bottom: 10px;">
+                        <select name="stage" required
+                            style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7); width: 100%; margin-bottom: 10px;">
+                            <option value="1">Stage 1</option>
+                            <option value="2">Stage 2</option>
+                            <option value="3">Stage 3</option>
+                        </select>
+                        <input type="number" step="0.1" name="min_moisture" placeholder="Min Moisture %" required
+                            style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7); width: 100%;">
+                    </div>
+                    <button type="submit" class="update-btn">Add Sensor</button>
+                </form>
+            </div>
+
+            <!-- Configured Sensors List -->
+            {% if sensor_configs %}
+            <div class="control-item">
+                <h3>Configured Sensors</h3>
+                {% for sensor_id, config in sensor_configs.items() %}
+                <div style="border: 1px solid var(--gold); border-radius: 5px; padding: 15px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.5);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-family: 'Playfair Display', serif; color: var(--dark); font-size: 1.1rem;">{{ sensor_id }}</span>
+                        <form action="/sensor/toggle" method="POST" style="margin: 0;">
+                            <input type="hidden" name="sensor_id" value="{{ sensor_id }}">
+                            <button type="submit" class="state-indicator {{ 'active' if config.active else '' }}" style="margin: 0;">
+                                {{ "Active" if config.active else "Inactive" }}
+                            </button>
+                        </form>
+                    </div>
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 10px;">
+                        <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Stage:</span>
+                        <span>{{ config.stage }}</span>
+                        <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Min Moisture:</span>
+                        <span>{{ config.min_moisture }}%</span>
+                    </div>
+                    {% if sensor_id in sensor_readings and sensor_readings[sensor_id] %}
+                    <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
+                        <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Latest Reading:</span>
+                        {% set latest = sensor_readings[sensor_id][-1] %}
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 5px;">
+                            <span>Moisture:</span>
+                            <span>{{ "%.1f"|format(latest.moisture) }}%</span>
+                            <span>Temperature:</span>
+                            <span>{{ "%.1f"|format(latest.temperature) }}°C</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
         <!-- Light Section -->
         <div class="control-section">
             <h2>Licht</h2>

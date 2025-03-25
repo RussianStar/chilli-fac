@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict 
+from typing import Dict, List 
 
 from hydro import Hydro
 from lux import Lux
@@ -21,6 +21,11 @@ class SystemState:
     zeus: Dict[int, Lux] = field(init=False, default_factory=dict)
     static_lights: Dict[int, StaticLight] = field(init=False, default_factory=dict)
     
+    # Sensor state tracking
+    sensor_configs: Dict[str, Dict] = field(default_factory=dict)  # {sensor_id: {stage: int, min_moisture: float, active: bool}}
+    sensor_readings: Dict[str, List[Dict]] = field(default_factory=dict)  # {sensor_id: [{timestamp, moisture, temp}]}
+    watering_triggers: Dict[int, bool] = field(default_factory=dict)  # {stage: should_water}
+    
     # Initialize state tracking
     valves: list = field(default_factory=list)
     pumps: int = field(init=False)
@@ -34,8 +39,8 @@ class SystemState:
     watering_durations: Dict[int, int] = field(init=False, default_factory=dict)
     camera_endpoints: Dict = field(init=False)
     
-    watering_progress: Dict = field(init=False)
-    watering_task: Dict = field(init=False)
+    watering_progress: Dict = field(default_factory=dict)
+    watering_task: Dict = field(default_factory=dict)
 
     def __post_init__(self):
         """Initialize components after dataclass initialization"""

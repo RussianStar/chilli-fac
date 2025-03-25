@@ -15,6 +15,8 @@ def render(request,current_state):
                                             'static_light_auto_states': current_state.static_light_auto_states,
                                            'watering_auto_state': current_state.watering_auto_state,
                                            'watering_durations': current_state.watering_durations,
+                                           'sensor_configs': current_state.sensor_configs,
+                                                                                      'sensor_readings': current_state.sensor_readings,
                                             'zeus_auto_states': current_state.zeus_auto_states,
                                             'pumps': current_state.pump_states,
                                             'camera_count': len(current_state.camera_endpoints)})
