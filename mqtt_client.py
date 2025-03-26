@@ -23,14 +23,41 @@ class MQTTClient:
         self.port = config['mqtt'].get('port', 1883)
         self.keepalive = config['mqtt'].get('keepalive', 60)
         
+        # Set up authentication if user and password are provided in config
+        if 'user' in config['mqtt'] and 'password' in config['mqtt']:
+            self.username = config['mqtt']['user']
+            self.password = config['mqtt']['password']
+            self.client.username_pw_set(self.username, self.password)
+            print(f"MQTT authentication configured for user: {self.username}")
+
     def connect(self):
         """Connect to MQTT broker and start network loop"""
         try:
-            self.client.connect(self.broker, self.port, self.keepalive)
+            if self.username and self.password:
+                self.client.username_pw_set(self.username, self.password)
+                
+            # Add some error checking for broker address
+            if not self.broker:
+                raise ValueError("MQTT broker address cannot be empty")
+                
+            # Try to resolve the hostname before connecting
+            import socket
+            try:
+                socket.gethostbyname(self.broker)
+            except socket.gaierror:
+                print(f"Warning: Could not resolve hostname '{self.broker}'")
+                # You might want to use a fallback address or IP directly
+                # self.broker = "fallback.mqtt.broker" or "192.168.1.100"
+            
+            # Add connection timeout
+            self.client.connect(self.broker, self.port, self.keepalive, bind_address="0.0.0.0")
             self.client.loop_start()
             return True
         except Exception as e:
             print(f"MQTT connection failed: {str(e)}")
+            # Add more detailed error information
+            import traceback
+            traceback.print_exc()
             return False
     
     def on_connect(self, client, userdata, flags, rc):
@@ -40,7 +67,15 @@ class MQTTClient:
             # Subscribe to all soil moisture sensor topics
             client.subscribe(f"{self.broker}/bodenfeuchte/devices/#")
         else:
-            print(f"Connection failed with code {rc}")
+            connection_errors = {
+                1: "Connection refused - incorrect protocol version",
+                2: "Connection refused - invalid client identifier",
+                3: "Connection refused - server unavailable",
+                4: "Connection refused - bad username or password",
+                5: "Connection refused - not authorized"
+            }
+            error_msg = connection_errors.get(rc, f"Unknown error code {rc}")
+            print(f"Connection failed: {error_msg}")
     
     def on_message(self, client, userdata, msg):
         """Callback for incoming messages"""
@@ -66,7 +101,6 @@ class MQTTClient:
             sensor_id: Unique sensor identifier
             data: Dictionary containing sensor readings
         """
-        # Store reading (limit to last 10 readings)
         if sensor_id not in self.state.sensor_readings:
             self.state.sensor_readings[sensor_id] = []
             
@@ -77,7 +111,7 @@ class MQTTClient:
         })
         
         # Keep only last 10 readings
-        self.state.sensor_readings[sensor_id] = self.state.sensor_readings[sensor_id][-10:]
+        self.state.sensor_readings[sensor_id] = self.state.sensor_readings[sensor_id][-24:]
         
         # Check watering triggers if this sensor is configured
         if sensor_id in self.state.sensor_configs:

@@ -17,7 +17,9 @@ def config():
         'mqtt': {
             'broker': 'test.mosquitto.org',
             'port': 1883,
-            'keepalive': 60
+            'keepalive': 60,
+            'username': 'dummy_user',  # Added dummy credentials
+            'password': 'dummy_password'  # Added dummy credentials
         }
     }
 
@@ -31,6 +33,8 @@ def mqtt_client(mock_state, config):
 def test_connect_success(mqtt_client):
     client, mock_client = mqtt_client
     client.connect()
+    # Should set credentials before connecting
+    mock_client.username_pw_set.assert_called_with('dummy_user', 'dummy_password')
     mock_client.connect.assert_called_with(
         'test.mosquitto.org',
         1883,

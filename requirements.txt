@@ -1,0 +1,11 @@
+aiohttp==3.11.10
+aiohttp_cors==0.7.0
+aiohttp_jinja2==1.6
+aiosqlite==0.21.0
+beautifulsoup4==4.13.3
+Jinja2==3.1.5
+pigpio==1.78
+Pillow==10.2.0
+schedule==1.2.2
+paho-mqtt==2.1.0
+RPi.GPIO=0.7.1

@@ -487,7 +487,6 @@ class HydroControlApp:
 
     async def home(self, request: web.Request) -> web.Response:
         """Render the home page with current system state."""
-        print(self.current_state)
         return render(request, self.current_state)
 
     async def take_picture(self, request: web.Request) -> web.Response:

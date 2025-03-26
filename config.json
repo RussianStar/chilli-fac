@@ -15,6 +15,13 @@
         "1": 6,
         "2": 25
     },
+    "mqtt": {
+        "broker" : "192.168.178.230",
+        "port" : 1883,
+        "keepalive" : 60,
+        "user" : "mqtt2",
+        "password" : "mqttilman"
+    },
     "camera_endpoints": [
         "http://192.168.178.155:8080",
         "http://192.168.178.157:8080", 
