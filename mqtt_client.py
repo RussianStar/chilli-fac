@@ -22,8 +22,8 @@ class MQTTClient:
         self.broker = config['mqtt']['broker']
         self.port = config['mqtt'].get('port', 1883)
         self.keepalive = config['mqtt'].get('keepalive', 60)
-        self.humidity_topics = "/bodenfeuchte/+/humidity" # Topic for humidity sensors
-        self.soil_moisture_topics = f"{self.broker}/bodenfeuchte/devices/#" # Original topic for soil moisture
+        # self.humidity_topics = "/bodenfeuchte/+/humidity" # REMOVED
+        self.sensor_data_topic_prefix = f"bodenfeuchte/devices/" # Topic prefix for combined sensor data
 
         # Set up authentication if user and password are provided in config
         if 'user' in config['mqtt'] and 'password' in config['mqtt']:
@@ -66,11 +66,10 @@ class MQTTClient:
         """Callback when connected to broker"""
         if rc == 0:
             print("Connected to MQTT broker")
-            # Subscribe to topics
-            client.subscribe(self.soil_moisture_topics)
-            print(f"Subscribed to soil moisture topic: {self.soil_moisture_topics}")
-            client.subscribe(self.humidity_topics)
-            print(f"Subscribed to humidity topic: {self.humidity_topics}")
+            # Subscribe to the main sensor data topic
+            sensor_topic_wildcard = f"{self.sensor_data_topic_prefix}#"
+            client.subscribe(sensor_topic_wildcard)
+            print(f"Subscribed to sensor data topic: {sensor_topic_wildcard}")
         else:
             connection_errors = {
                 1: "Connection refused - incorrect protocol version",
@@ -89,33 +88,21 @@ class MQTTClient:
             payload = msg.payload.decode('utf-8') # Decode payload
             data = json.loads(payload)
 
-            # Check if it's a humidity message
-            # Simple check: does the topic end with /humidity?
-            if topic.endswith("/humidity"):
-                # Extract sensor_id (assuming format /bodenfeuchte/<id>/humidity)
-                parts = topic.split('/')
-                if len(parts) >= 3 and parts[-1] == 'humidity':
-                    sensor_id = parts[-2]
-                    if 'humidity' in data:
-                        humidity_value = float(data['humidity'])
-                        self.process_humidity_data(sensor_id, humidity_value)
-                    else:
-                        print(f"Missing 'humidity' key in payload from {topic}")
-                else:
-                     print(f"Could not parse sensor_id from humidity topic: {topic}")
 
-            # Check if it's a soil moisture message (using original logic structure)
-            # Note: This assumes soil moisture topics DON'T end with /humidity
-            elif topic.startswith(self.broker + "/bodenfeuchte/devices/"): # More specific check
+            # Check if the topic matches the expected sensor data prefix
+            if topic.startswith(self.sensor_data_topic_prefix):
                 sensor_id = topic.split('/')[-1]
-                # Validate required fields for soil moisture
-                if all(k in data for k in ['ADC', 'temperature']):
+                # Validate required fields based on payload content
+                required_keys = ['ADC', 'Temperature', 'Humidity']
+                if all(k in data for k in required_keys):
+                    # Process the combined sensor data
                     self.process_sensor_data(sensor_id, data)
                 else:
-                    print(f"Invalid soil moisture sensor data format from {sensor_id} on topic {topic}")
+                    missing_keys = [k for k in required_keys if k not in data]
+                    print(f"Invalid sensor data format from {sensor_id} on topic {topic}. Missing keys: {missing_keys}")
             else:
                 # Optional: Log messages from other topics if needed
-                # print(f"Received message on unhandled topic: {topic}")
+                print(f"Received message on unhandled topic: {topic}")
                 pass
 
         except json.JSONDecodeError:
@@ -136,13 +123,20 @@ class MQTTClient:
         if sensor_id not in self.state.sensor_readings:
             self.state.sensor_readings[sensor_id] = []
             
+        # Extract all relevant values
+        timestamp = datetime.now().isoformat()
+        moisture = float(data['ADC'])
+        temperature = float(data['Temperature'])
+        humidity = float(data.get('Humidity', 0.0)) # Use .get with default if Humidity might be missing
+
         self.state.sensor_readings[sensor_id].append({
-            'timestamp': datetime.now().isoformat(),
-            'moisture': float(data['ADC']),
-            'temperature': float(data['temperature'])
+            'timestamp': timestamp,
+            'moisture': moisture,
+            'temperature': temperature,
+            'humidity': humidity # Store humidity here
         })
         
-        # Keep only last 10 readings
+        # Keep only last 24 readings (as per existing code)
         self.state.sensor_readings[sensor_id] = self.state.sensor_readings[sensor_id][-24:]
         
         # Check watering triggers if this sensor is configured
@@ -172,37 +166,7 @@ class MQTTClient:
             self.state.watering_triggers[config['stage']] = True
             print(f"Watering triggered for stage {config['stage']} (sensor {sensor_id})")
 
-    def process_humidity_data(self, sensor_id: str, humidity: float):
-        """
-        Process and store humidity sensor data.
-
-        Args:
-            sensor_id: Unique sensor identifier from the topic.
-            humidity: The humidity value from the payload.
-        """
-        try:
-            # Ensure the state object has the humidity_readings dictionary
-            if not hasattr(self.state, 'humidity_readings'):
-                 self.state.humidity_readings = {} # Initialize if missing
-
-            if sensor_id not in self.state.humidity_readings:
-                self.state.humidity_readings[sensor_id] = []
-
-            timestamp = datetime.now().isoformat()
-            self.state.humidity_readings[sensor_id].append({
-                'timestamp': timestamp,
-                'humidity': humidity
-            })
-
-            # Keep only the last N readings (e.g., 5)
-            max_readings = 5
-            self.state.humidity_readings[sensor_id] = self.state.humidity_readings[sensor_id][-max_readings:]
-
-            print(f"Processed humidity from {sensor_id}: {humidity}% at {timestamp}")
-
-        except Exception as e:
-            print(f"Error processing humidity data for sensor {sensor_id}: {e}")
-
+    # Removed process_humidity_data function as it's no longer needed
 
     def disconnect(self):
         """Disconnect from MQTT broker"""

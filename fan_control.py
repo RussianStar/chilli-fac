@@ -45,7 +45,7 @@ class FanControl(gpio_device):
 
         # Initialize state variables
         self._is_running = False  # Tracks if the fan is currently physically on
-        self._target_humidity = 70.0  # Default target humidity percentage
+        self._target_humidity = 20.0  # Default target humidity percentage
         self._control_active = False  # Whether the automatic control loop is active
         self._check_job = None  # Holds the scheduled humidity check job
         self._scheduler_thread = None
@@ -213,8 +213,8 @@ class FanControl(gpio_device):
             # Control Strategy: If humidity is more than 1% below target
             if error > 1.0:
                 # Calculate run duration (proportional control)
-                # For every 1% below target, run for 10 seconds. Max 300 seconds (5 mins).
-                run_duration_seconds = min(int(error * 10), 300)
+                # For every 1% below target, run for 10 seconds. Max 30 seconds (5 mins).
+                run_duration_seconds = min(int(error * 10), 30)
                 self.logger.info(f"Humidity low (Error: {error:.2f}%). Running fan for {run_duration_seconds} seconds.")
 
                 # Only start the fan and timer if it's not already running *under timer control*

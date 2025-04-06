@@ -740,7 +740,7 @@ class HydroControlApp:
 
     async def _periodic_humidity_check(self) -> None:
         """Periodically check humidity and trigger fan control."""
-        HUMIDITY_CHECK_INTERVAL = 300 # seconds (5 minutes)
+        HUMIDITY_CHECK_INTERVAL = 10 # seconds (5 minutes)
         self.logger.info(f"Starting periodic humidity check every {HUMIDITY_CHECK_INTERVAL} seconds.")
         while True:
             try:
