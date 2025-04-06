@@ -2,6 +2,7 @@
     "database_connection": "hydro_status.db",
     "database_timeout": 30,
     "pump_pin": 26,
+    "PIN_FAN": 17,
     "LOGGING_INTERVAL": 7200,
     "valve_pins": {
         "1": 20,

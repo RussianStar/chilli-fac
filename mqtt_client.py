@@ -22,7 +22,9 @@ class MQTTClient:
         self.broker = config['mqtt']['broker']
         self.port = config['mqtt'].get('port', 1883)
         self.keepalive = config['mqtt'].get('keepalive', 60)
-        
+        self.humidity_topics = "/bodenfeuchte/+/humidity" # Topic for humidity sensors
+        self.soil_moisture_topics = f"{self.broker}/bodenfeuchte/devices/#" # Original topic for soil moisture
+
         # Set up authentication if user and password are provided in config
         if 'user' in config['mqtt'] and 'password' in config['mqtt']:
             self.username = config['mqtt']['user']
@@ -64,8 +66,11 @@ class MQTTClient:
         """Callback when connected to broker"""
         if rc == 0:
             print("Connected to MQTT broker")
-            # Subscribe to all soil moisture sensor topics
-            client.subscribe(f"{self.broker}/bodenfeuchte/devices/#")
+            # Subscribe to topics
+            client.subscribe(self.soil_moisture_topics)
+            print(f"Subscribed to soil moisture topic: {self.soil_moisture_topics}")
+            client.subscribe(self.humidity_topics)
+            print(f"Subscribed to humidity topic: {self.humidity_topics}")
         else:
             connection_errors = {
                 1: "Connection refused - incorrect protocol version",
@@ -80,18 +85,45 @@ class MQTTClient:
     def on_message(self, client, userdata, msg):
         """Callback for incoming messages"""
         try:
-            sensor_id = msg.topic.split('/')[-1]
-            data = json.loads(msg.payload)
-            
-            # Validate required fields
-            if not all(k in data for k in ['ADC', 'temperature']):
-                print(f"Invalid sensor data format from {sensor_id}")
-                return
-                
-            self.process_sensor_data(sensor_id, data)
-            
+            topic = msg.topic
+            payload = msg.payload.decode('utf-8') # Decode payload
+            data = json.loads(payload)
+
+            # Check if it's a humidity message
+            # Simple check: does the topic end with /humidity?
+            if topic.endswith("/humidity"):
+                # Extract sensor_id (assuming format /bodenfeuchte/<id>/humidity)
+                parts = topic.split('/')
+                if len(parts) >= 3 and parts[-1] == 'humidity':
+                    sensor_id = parts[-2]
+                    if 'humidity' in data:
+                        humidity_value = float(data['humidity'])
+                        self.process_humidity_data(sensor_id, humidity_value)
+                    else:
+                        print(f"Missing 'humidity' key in payload from {topic}")
+                else:
+                     print(f"Could not parse sensor_id from humidity topic: {topic}")
+
+            # Check if it's a soil moisture message (using original logic structure)
+            # Note: This assumes soil moisture topics DON'T end with /humidity
+            elif topic.startswith(self.broker + "/bodenfeuchte/devices/"): # More specific check
+                sensor_id = topic.split('/')[-1]
+                # Validate required fields for soil moisture
+                if all(k in data for k in ['ADC', 'temperature']):
+                    self.process_sensor_data(sensor_id, data)
+                else:
+                    print(f"Invalid soil moisture sensor data format from {sensor_id} on topic {topic}")
+            else:
+                # Optional: Log messages from other topics if needed
+                # print(f"Received message on unhandled topic: {topic}")
+                pass
+
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from topic {msg.topic}: {msg.payload}")
+        except ValueError as ve:
+             print(f"Error converting value from topic {msg.topic}: {ve}")
         except Exception as e:
-            print(f"Error processing MQTT message: {str(e)}")
+            print(f"Error processing MQTT message from topic {msg.topic}: {str(e)}")
     
     def process_sensor_data(self, sensor_id: str, data: Dict):
         """
@@ -139,7 +171,39 @@ class MQTTClient:
         if all(m < min_moisture for m in last_four):
             self.state.watering_triggers[config['stage']] = True
             print(f"Watering triggered for stage {config['stage']} (sensor {sensor_id})")
-    
+
+    def process_humidity_data(self, sensor_id: str, humidity: float):
+        """
+        Process and store humidity sensor data.
+
+        Args:
+            sensor_id: Unique sensor identifier from the topic.
+            humidity: The humidity value from the payload.
+        """
+        try:
+            # Ensure the state object has the humidity_readings dictionary
+            if not hasattr(self.state, 'humidity_readings'):
+                 self.state.humidity_readings = {} # Initialize if missing
+
+            if sensor_id not in self.state.humidity_readings:
+                self.state.humidity_readings[sensor_id] = []
+
+            timestamp = datetime.now().isoformat()
+            self.state.humidity_readings[sensor_id].append({
+                'timestamp': timestamp,
+                'humidity': humidity
+            })
+
+            # Keep only the last N readings (e.g., 5)
+            max_readings = 5
+            self.state.humidity_readings[sensor_id] = self.state.humidity_readings[sensor_id][-max_readings:]
+
+            print(f"Processed humidity from {sensor_id}: {humidity}% at {timestamp}")
+
+        except Exception as e:
+            print(f"Error processing humidity data for sensor {sensor_id}: {e}")
+
+
     def disconnect(self):
         """Disconnect from MQTT broker"""
         self.client.loop_stop()

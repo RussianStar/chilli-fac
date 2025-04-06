@@ -1,6 +1,8 @@
 import asyncio
+import asyncio
 from state import SystemState
 from db import DatabaseAdapter
+import statistics # For calculating average humidity
 
 class Controller:
 
@@ -220,6 +222,106 @@ class Controller:
     def calculate_total_watering_duration(self, current_state):
         schedule = current_state.wtrctrl.DEFAULT_SCHEDULE
         return sum(step for step in schedule if not isinstance(step, dict))
+
+    # --- Fan Control Methods ---
+
+    def set_fan_target_humidity(self, current_state: SystemState, target: float):
+        """Sets the target humidity for the fan controller."""
+        if hasattr(current_state, 'fanctrl') and current_state.fanctrl:
+            current_state.fanctrl.set_target_humidity(target)
+            current_state.fan_state = current_state.fanctrl.get_status() # Update state
+            self._logger.info(f"Controller set fan target humidity to {target}%.")
+            self._log_status_fire_and_forget(current_state) # Log state change
+        else:
+            self._logger.error("Fan controller not available in state.")
+        return current_state
+
+    def set_fan_control_active(self, current_state: SystemState, active: bool):
+        """Activates or deactivates automatic fan control."""
+        if hasattr(current_state, 'fanctrl') and current_state.fanctrl:
+            if active:
+                current_state.fanctrl.activate_control()
+                self._logger.info("Controller activated automatic fan control.")
+            else:
+                current_state.fanctrl.deactivate_control()
+                self._logger.info("Controller deactivated automatic fan control.")
+            current_state.fan_state = current_state.fanctrl.get_status() # Update state
+            self._log_status_fire_and_forget(current_state) # Log state change
+        else:
+            self._logger.error("Fan controller not available in state.")
+        return current_state
+
+    def set_fan_manual(self, current_state: SystemState, turn_on: bool):
+        """Manually turns the fan on or off, disabling auto control."""
+        if hasattr(current_state, 'fanctrl') and current_state.fanctrl:
+            # Deactivate auto control when manual control is used
+            if current_state.fanctrl.is_control_active():
+                current_state.fanctrl.deactivate_control()
+                self._logger.info("Deactivated auto control due to manual fan operation.")
+
+            if turn_on:
+                current_state.fanctrl.turn_on()
+                self._logger.info("Controller manually turned fan ON.")
+            else:
+                current_state.fanctrl.turn_off()
+                self._logger.info("Controller manually turned fan OFF.")
+            current_state.fan_state = current_state.fanctrl.get_status() # Update state
+            self._log_status_fire_and_forget(current_state) # Log state change
+        else:
+            self._logger.error("Fan controller not available in state.")
+        return current_state
+
+    def check_and_control_humidity(self, current_state: SystemState):
+        """
+        Calculates average humidity and triggers fan control check.
+        Intended to be called periodically.
+        """
+        if not hasattr(current_state, 'fanctrl') or not current_state.fanctrl:
+            # self._logger.debug("Fan controller not available, skipping humidity check.") # Can be noisy
+            return current_state
+
+        if not current_state.fanctrl.is_control_active():
+             # self._logger.debug("Fan auto control not active, skipping humidity check.") # Can be noisy
+             return current_state # No need to check if auto control is off
+
+        # Calculate average humidity from the latest reading of each sensor
+        latest_readings = []
+        if hasattr(current_state, 'humidity_readings') and current_state.humidity_readings:
+            for sensor_id, readings in current_state.humidity_readings.items():
+                if readings: # Check if list is not empty
+                    # Get the last reading's humidity value
+                    latest_reading = readings[-1].get('humidity')
+                    if latest_reading is not None:
+                        try:
+                            latest_readings.append(float(latest_reading))
+                        except (ValueError, TypeError):
+                             self._logger.warning(f"Invalid humidity value '{latest_reading}' for sensor {sensor_id}")
+
+        average_humidity = None
+        if latest_readings:
+            try:
+                average_humidity = statistics.mean(latest_readings)
+                self._logger.debug(f"Calculated average humidity: {average_humidity:.2f}% from {len(latest_readings)} sensors.")
+            except statistics.StatisticsError:
+                 self._logger.error("Error calculating mean humidity.")
+            except Exception as e:
+                 self._logger.error(f"Unexpected error calculating average humidity: {e}")
+        else:
+            self._logger.warning("No recent humidity readings available to calculate average.")
+            # Optionally: Decide on behavior - turn fan off? Maintain last state?
+            # For now, we'll just not call the control check if no average is available.
+            return current_state # Exit if no average could be calculated
+
+        # Call the fan controller's internal check method with the calculated average
+        current_state.fanctrl._check_humidity_and_control(average_humidity)
+
+        # Update the state representation after the check
+        current_state.fan_state = current_state.fanctrl.get_status()
+
+        return current_state
+
+
+    # --- Watering Methods ---
 
     def check_and_execute_watering(self, current_state: SystemState):
         """

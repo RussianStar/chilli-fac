@@ -41,6 +41,7 @@ class HydroControlApp:
         )
         self.app = self._create_web_app()
         self.status_task = None
+        self.humidity_check_task = None # Add task for humidity check
         
         # Initialize MQTT client if configured
         if 'mqtt' in self.config:
@@ -104,6 +105,11 @@ class HydroControlApp:
             ('GET', '/light/{light_id}/auto', self.get_light_auto_settings),
             ('POST', '/sensor/config', self.set_sensor_config),
             ('POST', '/sensor/toggle', self.toggle_sensor_active),
+            # --- Fan Control Routes ---
+            ('GET', '/api/fan/status', self.get_fan_status),
+            ('POST', '/api/fan/target', self.set_fan_target),
+            ('POST', '/api/fan/control', self.set_fan_control),
+            ('POST', '/api/fan/manual', self.set_fan_manual),
         ]
         
         for method, path, handler in routes:
@@ -598,6 +604,61 @@ class HydroControlApp:
         except (ValueError, IndexError):
             return False
 
+    # --- Fan Control Handlers ---
+
+    async def get_fan_status(self, request: web.Request) -> web.Response:
+        """Endpoint to get the current status of the fan."""
+        if hasattr(self.current_state, 'fan_state'):
+            # Ensure the state is up-to-date before returning
+            if hasattr(self.current_state, 'fanctrl') and self.current_state.fanctrl:
+                 self.current_state.fan_state = self.current_state.fanctrl.get_status()
+            return web.json_response({'status': 'success', 'fan_state': self.current_state.fan_state})
+        else:
+            return web.json_response({'status': 'error', 'message': 'Fan state not available'}, status=500)
+
+    async def set_fan_target(self, request: web.Request) -> web.Response:
+        """Endpoint to set the target humidity for the fan."""
+        try:
+            data = await request.json()
+            target = float(data.get('target'))
+            if not (40.0 <= target <= 90.0): # Validate range
+                 return web.json_response({'status': 'error', 'message': 'Target humidity must be between 40 and 90'}, status=400)
+
+            self.current_state = self.controller.set_fan_target_humidity(self.current_state, target)
+            return web.json_response({'status': 'success', 'fan_state': self.current_state.fan_state})
+        except (ValueError, TypeError, KeyError):
+            return web.json_response({'status': 'error', 'message': 'Invalid target value provided. Expecting JSON: {"target": float}'}, status=400)
+        except Exception as e:
+            self.logger.error(f"Error setting fan target: {e}", exc_info=True)
+            return web.json_response({'status': 'error', 'message': f'Internal server error: {e}'}, status=500)
+
+    async def set_fan_control(self, request: web.Request) -> web.Response:
+        """Endpoint to activate or deactivate automatic fan control."""
+        try:
+            data = await request.json()
+            active = bool(data.get('active')) # bool(None) is False, bool(True) is True
+            self.current_state = self.controller.set_fan_control_active(self.current_state, active)
+            return web.json_response({'status': 'success', 'fan_state': self.current_state.fan_state})
+        except (ValueError, TypeError, KeyError):
+             return web.json_response({'status': 'error', 'message': 'Invalid active value provided. Expecting JSON: {"active": boolean}'}, status=400)
+        except Exception as e:
+            self.logger.error(f"Error setting fan control active state: {e}", exc_info=True)
+            return web.json_response({'status': 'error', 'message': f'Internal server error: {e}'}, status=500)
+
+    async def set_fan_manual(self, request: web.Request) -> web.Response:
+        """Endpoint to manually turn the fan on or off."""
+        try:
+            data = await request.json()
+            turn_on = bool(data.get('on'))
+            self.current_state = self.controller.set_fan_manual(self.current_state, turn_on)
+            return web.json_response({'status': 'success', 'fan_state': self.current_state.fan_state})
+        except (ValueError, TypeError, KeyError):
+             return web.json_response({'status': 'error', 'message': 'Invalid manual value provided. Expecting JSON: {"on": boolean}'}, status=400)
+        except Exception as e:
+            self.logger.error(f"Error setting fan manual state: {e}", exc_info=True)
+            return web.json_response({'status': 'error', 'message': f'Internal server error: {e}'}, status=500)
+
+
     # Application lifecycle methods
 
     async def start(self) -> None:
@@ -606,10 +667,11 @@ class HydroControlApp:
             self.logger.info('Starting Hydro Control System')
             self.logger.debug('Initializing database')
             await self.db.init_tables()
-            
-            # Start background status logging
+
+            # Start background tasks
             self.status_task = asyncio.create_task(self._log_status())
-            
+            self.humidity_check_task = asyncio.create_task(self._periodic_humidity_check()) # Start humidity check task
+
             # Start web server
             runner = web.AppRunner(self.app)
             await runner.setup()
@@ -652,11 +714,47 @@ class HydroControlApp:
             try:
                 await self.status_task
             except asyncio.CancelledError:
-                pass
-                
+                self.logger.debug("Status logging task already cancelled.")
+
+        # Cancel humidity check task
+        if self.humidity_check_task:
+            self.humidity_check_task.cancel()
+            try:
+                await self.humidity_check_task
+            except asyncio.CancelledError:
+                self.logger.debug("Humidity check task already cancelled.")
+
+        # Perform state cleanup (includes GPIO cleanup for all devices)
+        if hasattr(self, 'current_state') and self.current_state:
+             self.current_state.cleanup()
+             self.logger.info("System state cleanup performed.")
+
+        # Disconnect MQTT client if it exists
+        if hasattr(self, 'mqtt_client') and self.mqtt_client:
+            self.mqtt_client.disconnect()
+            self.logger.info("MQTT client disconnected.")
+
         # Close database connection
         await self.db.close()
         self.logger.info('Shutdown complete')
+
+    async def _periodic_humidity_check(self) -> None:
+        """Periodically check humidity and trigger fan control."""
+        HUMIDITY_CHECK_INTERVAL = 300 # seconds (5 minutes)
+        self.logger.info(f"Starting periodic humidity check every {HUMIDITY_CHECK_INTERVAL} seconds.")
+        while True:
+            try:
+                # Wait first, then check
+                await asyncio.sleep(HUMIDITY_CHECK_INTERVAL)
+                self.logger.debug("Running periodic humidity check...")
+                self.current_state = self.controller.check_and_control_humidity(self.current_state)
+            except asyncio.CancelledError:
+                self.logger.info("Periodic humidity check task cancelled.")
+                break
+            except Exception as e:
+                self.logger.error(f"Error in periodic humidity check: {str(e)}", exc_info=True)
+                # Wait a bit longer before retrying after an error
+                await asyncio.sleep(60)
 
 
 def main() -> None:
