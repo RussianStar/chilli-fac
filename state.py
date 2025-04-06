@@ -98,7 +98,7 @@ class SystemState:
 
         # Initialize Fan Controller
         if 'PIN_FAN' in self.config:
-            self.fanctrl = FanControl(logger=self.logger, gpio_pin=self.config['PIN_FAN'], debug=self.debug)
+            self.fanctrl = FanControl(logger=self.logger, state=self, gpio_pin=self.config['PIN_FAN'], debug=self.debug) # Pass self (state)
             self.fan_state = self.fanctrl.get_status() # Initialize fan state
         else:
             self.logger.error("PIN_FAN not found in config.json. Fan control will be unavailable.")

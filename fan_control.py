@@ -28,16 +28,18 @@ class FanControl(gpio_device):
     Controls a fan connected to a GPIO pin based on target humidity.
     """
 
-    def __init__(self, logger, gpio_pin, debug=False):
+    def __init__(self, logger, state, gpio_pin, debug=False):
         """
         Initialize the FanControl.
 
         Args:
             logger: Logger instance.
+            state: The SystemState object containing sensor readings.
             gpio_pin: The BCM GPIO pin number the fan is connected to.
             debug (bool): If True, use mock GPIO and skip actual hardware interaction.
         """
         self.logger = logger
+        self.state = state # Store the state object
         self.gpio_pin = gpio_pin
         self.debug = debug or not GPIO_AVAILABLE # Force debug if GPIO not available
 
@@ -190,31 +192,53 @@ class FanControl(gpio_device):
 
     # --- Core Control Logic ---
 
-    def _check_humidity_and_control(self, current_avg_humidity: float):
+    def _check_humidity_and_control(self):
         """
-        Checks the average humidity and controls the fan accordingly.
+        Checks the average humidity from sensor readings and controls the fan accordingly.
         This method is intended to be called periodically by the main application loop.
-
-        Args:
-            current_avg_humidity (float): The current average humidity reading.
+        It calculates the average humidity from the latest reading of all sensors.
         """
         if not self._control_active:
             # self.logger.debug("Auto control inactive, skipping humidity check.") # Can be noisy
             return
 
-        if current_avg_humidity is None:
-            self.logger.warning("Cannot perform humidity check: current average humidity is None.")
-            return
+        # Calculate average humidity from sensor readings
+        humidities = []
+        if hasattr(self.state, 'sensor_readings') and self.state.sensor_readings:
+            for sensor_id, readings in self.state.sensor_readings.items():
+                if readings: # Check if there are readings for this sensor
+                    last_reading = readings[-1]
+                    if 'humidity' in last_reading:
+                        try:
+                            humidities.append(float(last_reading['humidity']))
+                        except (ValueError, TypeError):
+                             self.logger.warning(f"Invalid humidity value '{last_reading['humidity']}' for sensor {sensor_id}. Skipping.")
+                    else:
+                        self.logger.warning(f"No 'humidity' key in last reading for sensor {sensor_id}. Skipping.")
+                # else: # Optional: Log if a sensor has no readings yet
+                #     self.logger.debug(f"No readings found for sensor {sensor_id}.")
+        else:
+            self.logger.warning("Cannot perform humidity check: 'sensor_readings' not found in state or is empty.")
+            return # Cannot proceed without sensor data
+
+        if not humidities:
+            self.logger.warning("Cannot perform humidity check: No valid humidity readings available from sensors.")
+            return # Cannot proceed without valid humidity data
+
+        current_avg_humidity = sum(humidities) / len(humidities)
 
         try:
-            error = self._target_humidity - float(current_avg_humidity)
-            self.logger.debug(f"Humidity Check: Target={self._target_humidity}%, CurrentAvg={current_avg_humidity:.2f}%, Error={error:.2f}%")
+            # Ensure target is float for comparison
+            target_humidity_float = float(self._target_humidity)
+            error = target_humidity_float - current_avg_humidity
+            self.logger.debug(f"Humidity Check: Target={target_humidity_float}%, CurrentAvg={current_avg_humidity:.2f}%, Error={error:.2f}%")
 
             # Control Strategy: If humidity is more than 1% below target
+            # Use a small tolerance for floating point comparisons if needed, but 1.0 difference is large enough
             if error > 1.0:
                 # Calculate run duration (proportional control)
                 # For every 1% below target, run for 10 seconds. Max 30 seconds (5 mins).
-                run_duration_seconds = min(int(error * 10), 30)
+                run_duration_seconds = min(int(error * 10), 300)
                 self.logger.info(f"Humidity low (Error: {error:.2f}%). Running fan for {run_duration_seconds} seconds.")
 
                 # Only start the fan and timer if it's not already running *under timer control*
@@ -246,8 +270,8 @@ class FanControl(gpio_device):
                     # self.logger.debug(f"Humidity sufficient (Error: {error:.2f}%). Fan already off.") # Can be noisy
                     pass
 
-        except ValueError:
-            self.logger.error(f"Invalid humidity value received: {current_avg_humidity}")
+        except ValueError as ve:
+             self.logger.error(f"Error converting humidity values during check: {ve}")
         except Exception as e:
             self.logger.error(f"Error during humidity check and control: {e}", exc_info=True)
 

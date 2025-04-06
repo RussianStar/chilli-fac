@@ -1,8 +1,7 @@
 import asyncio
-import asyncio
 from state import SystemState
 from db import DatabaseAdapter
-import statistics # For calculating average humidity
+# import statistics # No longer needed
 
 class Controller:
 
@@ -273,8 +272,9 @@ class Controller:
 
     def check_and_control_humidity(self, current_state: SystemState):
         """
-        Calculates average humidity and triggers fan control check.
+        Triggers the fan controller's internal humidity check.
         Intended to be called periodically.
+        The FanControl class now handles reading humidity from the state itself.
         """
         if not hasattr(current_state, 'fanctrl') or not current_state.fanctrl:
             # self._logger.debug("Fan controller not available, skipping humidity check.") # Can be noisy
@@ -284,39 +284,15 @@ class Controller:
              # self._logger.debug("Fan auto control not active, skipping humidity check.") # Can be noisy
              return current_state # No need to check if auto control is off
 
-        # Calculate average humidity from the latest reading of each sensor
-        latest_readings = []
-        if hasattr(current_state, 'humidity_readings') and current_state.humidity_readings:
-            for sensor_id, readings in current_state.humidity_readings.items():
-                if readings: # Check if list is not empty
-                    # Get the last reading's humidity value
-                    latest_reading = readings[-1].get('humidity')
-                    if latest_reading is not None:
-                        try:
-                            latest_readings.append(float(latest_reading))
-                        except (ValueError, TypeError):
-                             self._logger.warning(f"Invalid humidity value '{latest_reading}' for sensor {sensor_id}")
-
-        average_humidity = None
-        if latest_readings:
-            try:
-                average_humidity = statistics.mean(latest_readings)
-                self._logger.debug(f"Calculated average humidity: {average_humidity:.2f}% from {len(latest_readings)} sensors.")
-            except statistics.StatisticsError:
-                 self._logger.error("Error calculating mean humidity.")
-            except Exception as e:
-                 self._logger.error(f"Unexpected error calculating average humidity: {e}")
-        else:
-            self._logger.warning("No recent humidity readings available to calculate average.")
-            # Optionally: Decide on behavior - turn fan off? Maintain last state?
-            # For now, we'll just not call the control check if no average is available.
-            return current_state # Exit if no average could be calculated
-
-        # Call the fan controller's internal check method with the calculated average
-        current_state.fanctrl._check_humidity_and_control(average_humidity)
-
-        # Update the state representation after the check
-        current_state.fan_state = current_state.fanctrl.get_status()
+        # Call the fan controller's internal check method directly.
+        # It will access the state and calculate the average humidity internally.
+        try:
+            current_state.fanctrl._check_humidity_and_control()
+            # Update the state representation after the check
+            current_state.fan_state = current_state.fanctrl.get_status()
+            self._logger.debug("Executed fan humidity check and control.")
+        except Exception as e:
+             self._logger.error(f"Error during fan controller check: {e}", exc_info=True)
 
         return current_state
 
