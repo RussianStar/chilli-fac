@@ -202,73 +202,78 @@ class FanControl(gpio_device):
             # self.logger.debug("Auto control inactive, skipping humidity check.") # Can be noisy
             return
 
-        # Calculate average humidity from sensor readings
-        humidities = []
-        if hasattr(self.state, 'sensor_readings') and self.state.sensor_readings:
-            for sensor_id, readings in self.state.sensor_readings.items():
-                if readings: # Check if there are readings for this sensor
-                    last_reading = readings[-1]
-                    if 'humidity' in last_reading:
-                        try:
-                            humidities.append(float(last_reading['humidity']))
-                        except (ValueError, TypeError):
-                             self.logger.warning(f"Invalid humidity value '{last_reading['humidity']}' for sensor {sensor_id}. Skipping.")
-                    else:
-                        self.logger.warning(f"No 'humidity' key in last reading for sensor {sensor_id}. Skipping.")
-                # else: # Optional: Log if a sensor has no readings yet
-                #     self.logger.debug(f"No readings found for sensor {sensor_id}.")
-        else:
-            self.logger.warning("Cannot perform humidity check: 'sensor_readings' not found in state or is empty.")
-            return # Cannot proceed without sensor data
+        # --- Start Inserted Code Block ---
+        active_humidities = []
+        if hasattr(self.state, 'sensor_configs') and self.state.sensor_configs:
+            active_sensor_ids = {sensor_id for sensor_id, config in self.state.sensor_configs.items() if config.get('active', False)}
+            self.logger.debug(f"Active sensors for humidity check: {active_sensor_ids}")
 
-        if not humidities:
-            self.logger.warning("Cannot perform humidity check: No valid humidity readings available from sensors.")
+            if not active_sensor_ids:
+                self.logger.warning("Cannot perform humidity check: No sensors are marked as active in sensor_configs.")
+                return # Cannot proceed without active sensors
+
+            if hasattr(self.state, 'sensor_readings') and self.state.sensor_readings:
+                for sensor_id in active_sensor_ids:
+                    if sensor_id in self.state.sensor_readings and self.state.sensor_readings[sensor_id]:
+                        last_reading = self.state.sensor_readings[sensor_id][-1]
+                        if 'humidity' in last_reading:
+                            try:
+                                humidity_value = float(last_reading['humidity'])
+                                active_humidities.append(humidity_value)
+                                self.logger.debug(f"Sensor {sensor_id}: Found active humidity reading: {humidity_value}")
+                            except (ValueError, TypeError):
+                                self.logger.warning(f"Invalid humidity value '{last_reading['humidity']}' for active sensor {sensor_id}. Skipping.")
+                        else:
+                            self.logger.warning(f"No 'humidity' key in last reading for active sensor {sensor_id}. Skipping.")
+                    else:
+                        self.logger.warning(f"No readings found for active sensor {sensor_id}. Skipping.")
+            else:
+                self.logger.warning("Cannot perform humidity check: 'sensor_readings' not found in state or is empty.")
+                return # Cannot proceed without sensor data
+
+        else:
+            self.logger.warning("Cannot perform humidity check: 'sensor_configs' not found in state or is empty.")
+            return # Cannot proceed without sensor configurations
+
+        if not active_humidities:
+            self.logger.warning("Cannot perform humidity check: No valid humidity readings available from active sensors.")
+            # If no active sensors have readings, should the fan be off? Assuming yes.
+            if self._is_running:
+                 self.logger.info("Turning fan OFF due to lack of valid humidity data from active sensors.")
+                 self.turn_off()
             return # Cannot proceed without valid humidity data
 
-        current_avg_humidity = sum(humidities) / len(humidities)
+        current_avg_humidity = sum(active_humidities) / len(active_humidities)
+        # --- End Inserted Code Block ---
 
         try:
-            # Ensure target is float for comparison
+            # --- Start Inserted Code Block ---
             target_humidity_float = float(self._target_humidity)
-            error = target_humidity_float - current_avg_humidity
-            self.logger.debug(f"Humidity Check: Target={target_humidity_float}%, CurrentAvg={current_avg_humidity:.2f}%, Error={error:.2f}%")
+            self.logger.debug(f"Humidity Check: Target={target_humidity_float}%, CurrentAvgActive={current_avg_humidity:.2f}%")
 
-            # Control Strategy: If humidity is more than 1% below target
-            # Use a small tolerance for floating point comparisons if needed, but 1.0 difference is large enough
-            if error > 1.0:
-                # Calculate run duration (proportional control)
-                # For every 1% below target, run for 10 seconds. Max 30 seconds (5 mins).
-                run_duration_seconds = min(int(error * 10), 300)
-                self.logger.info(f"Humidity low (Error: {error:.2f}%). Running fan for {run_duration_seconds} seconds.")
-
-                # Only start the fan and timer if it's not already running *under timer control*
-                if not self._is_running or not (self._active_timer and self._active_timer.is_alive()):
-                    # Cancel any existing timer just in case state is inconsistent
-                    if self._active_timer and self._active_timer.is_alive():
-                        self._active_timer.cancel()
-
-                    self.turn_on() # Turn the fan on
-
-                    # Schedule the fan to turn off after the calculated duration
-                    self._active_timer = threading.Timer(run_duration_seconds, self.turn_off)
-                    self._active_timer.daemon = True # Allow program to exit even if timer is pending
-                    self._active_timer.start()
-                    self.logger.debug(f"Scheduled fan turn_off in {run_duration_seconds} seconds.")
+            # Control Strategy: Turn fan ON if average humidity of active sensors is ABOVE target.
+            if current_avg_humidity > target_humidity_float:
+                if not self._is_running:
+                    self.logger.info(f"Humidity high ({current_avg_humidity:.2f}% > {target_humidity_float}%). Turning fan ON.")
+                    self.turn_on()
                 else:
-                    self.logger.debug("Fan is already running (possibly under timer control), check next cycle.")
-
-            # Else: Humidity is within 1% of target or higher
+                    # self.logger.debug(f"Humidity high ({current_avg_humidity:.2f}% > {target_humidity_float}%). Fan already ON.") # Can be noisy
+                    pass # Fan is already running, leave it on
+            # Else: Humidity is at or below target.
             else:
                 if self._is_running:
-                    self.logger.info(f"Humidity sufficient (Error: {error:.2f}%). Turning fan off.")
-                    # Cancel timer if it exists and turn off immediately
-                    if self._active_timer and self._active_timer.is_alive():
-                        self._active_timer.cancel()
-                        self._active_timer = None
+                    self.logger.info(f"Humidity OK ({current_avg_humidity:.2f}% <= {target_humidity_float}%). Turning fan OFF.")
                     self.turn_off()
                 else:
-                    # self.logger.debug(f"Humidity sufficient (Error: {error:.2f}%). Fan already off.") # Can be noisy
-                    pass
+                    # self.logger.debug(f"Humidity OK ({current_avg_humidity:.2f}% <= {target_humidity_float}%). Fan already OFF.") # Can be noisy
+                    pass # Fan is already off, leave it off
+
+            # Ensure any previously running turn-off timers are cancelled, as we now use direct on/off logic.
+            if self._active_timer and self._active_timer.is_alive():
+                self.logger.debug("Cancelling legacy turn-off timer.")
+                self._active_timer.cancel()
+                self._active_timer = None
+            # --- End Inserted Code Block ---
 
         except ValueError as ve:
              self.logger.error(f"Error converting humidity values during check: {ve}")
