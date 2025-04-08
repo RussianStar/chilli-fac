@@ -38,7 +38,7 @@
   "initial_state": {
     "fan": {
       "target_humidity": 65.0,
-      "control_active": false,
+      "control_active": true,
       "manual_on": false
     },
     "watering": {
@@ -54,28 +54,28 @@
     },
     "static_lights_auto": {
       "3": {
-        "enabled": false,
-        "start_time": "07:00",
-        "duration_hours": 12
+        "enabled": true,
+        "start_time": "18:00",
+        "duration_hours": 15
       }
     },
     "zeus_lights_auto": {
       "1": {
-        "enabled": false,
-        "start_time": "07:00",
-        "duration_hours": 14,
-        "brightness": 80
+        "enabled": true,
+        "start_time": "18:00",
+        "duration_hours": 15,
+        "brightness": 90
       },
       "2": {
-        "enabled": false,
-        "start_time": "07:00",
-        "duration_hours": 14,
-        "brightness": 80
+        "enabled": true,
+        "start_time": "18:00",
+        "duration_hours": 15,
+        "brightness": 90
       }
     },
     "sensors": {
-       "default_sensor_1": { "stage": 1, "min_moisture": 50.0, "active": true, "min_adc": 1000, "max_adc": 2500 },
-       "default_sensor_2": { "stage": 2, "min_moisture": 45.0, "active": true, "min_adc": 1100, "max_adc": 2600 }
+       "48e663fffe30018d": { "stage": 3, "min_moisture": 50.0, "active": true, "min_adc": 1000, "max_adc": 1550 },
+       "48e663fffe3001b3": { "stage": 2, "min_moisture": 45.0, "active": true, "min_adc": 1100, "max_adc": 1550 }
     }
   }
 }
