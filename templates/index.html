@@ -856,10 +856,11 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="control-section">
-            <h2>Wasser</h2>
+        <div> <!-- Start wrapper div for Wasser and Fan -->
+            <div class="control-section">
+                <h2>Wasser</h2>
 
-            <div class="control-item">
+                <div class="control-item">
                 <h3>Watering Control</h3>
                 <button id="startWateringBtn" onclick="startWateringSequence()">Execute default sequence</button>
                 <button id="cancelWateringBtn" onclick="cancelWateringSequence()"
@@ -965,43 +966,44 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Fan Control Section -->
-        <div class="control-section">
-            <h2>Fan Control</h2>
-            <div class="control-item">
-                <h3>Status & Control</h3>
-                <div style="margin-bottom: 15px;">
-                    <p style="margin-bottom: 8px;">Fan Status: <span id="fan-status" class="state-indicator">Unknown</span></p>
-                    <p style="margin-bottom: 8px;">Auto Control: <span id="fan-auto-status" class="state-indicator">Unknown</span></p>
-                    <p style="margin-bottom: 8px;">Target Humidity: <span id="fan-target-humidity-display">N/A</span>%</p>
-                </div>
-
-                <!-- Manual Controls -->
-                <div style="margin-bottom: 15px;">
-                    <button id="fanManualOnBtn" onclick="setFanManual(true)">Manual ON</button>
-                    <button id="fanManualOffBtn" onclick="setFanManual(false)">Manual OFF</button>
-                </div>
-
-                <!-- Auto Control Toggle -->
-                 <div style="margin-bottom: 15px;">
-                     <button id="fanAutoToggleBtn" class="state-indicator" onclick="toggleFanAutoControl()" style="width: 100%; cursor: pointer;">
-                         Enable Auto Control
-                     </button>
                  </div>
-
-                <!-- Target Humidity Slider -->
-                <div class="brightness-control"> <!-- Reusing brightness style for slider -->
-                     <label for="fanTargetHumiditySlider" style="font-family: 'Cormorant Garamond', serif; color: var(--dark); display: block; margin-bottom: 5px;">Set Target Humidity:</label>
-                     <input type="range" id="fanTargetHumiditySlider" name="target_humidity" min="40" max="90" value="70" step="1"
-                         oninput="updateFanTargetDisplay(this.value)" onchange="setFanTargetHumidity(this.value)" class="brightness-slider">
-                     <span id="fan-target-humidity-value" class="brightness-value">70%</span>
-                 </div>
+                </div>
             </div>
-        </div>
-        <!-- End Fan Control Section -->
+            <!-- Fan Control Section -->
+            <div class="control-section">
+                <h2>Fan Control</h2>
+                <div class="control-item">
+                    <h3>Status & Control</h3>
+                    <div style="margin-bottom: 15px;">
+                        <p style="margin-bottom: 8px;">Fan Status: <span id="fan-status" class="state-indicator">Unknown</span></p>
+                        <p style="margin-bottom: 8px;">Auto Control: <span id="fan-auto-status" class="state-indicator">Unknown</span></p>
+                        <p style="margin-bottom: 8px;">Target Humidity: <span id="fan-target-humidity-display">N/A</span>%</p>
+                    </div>
+
+                    <!-- Manual Controls -->
+                    <div style="margin-bottom: 15px;">
+                        <button id="fanManualOnBtn" onclick="setFanManual(true)">Manual ON</button>
+                        <button id="fanManualOffBtn" onclick="setFanManual(false)">Manual OFF</button>
+                    </div>
+
+                    <!-- Auto Control Toggle -->
+                     <div style="margin-bottom: 15px;">
+                         <button id="fanAutoToggleBtn" class="state-indicator" onclick="toggleFanAutoControl()" style="width: 100%; cursor: pointer;">
+                             Enable Auto Control
+                         </button>
+                     </div>
+
+                    <!-- Target Humidity Slider -->
+                    <div class="brightness-control"> <!-- Reusing brightness style for slider -->
+                         <label for="fanTargetHumiditySlider" style="font-family: 'Cormorant Garamond', serif; color: var(--dark); display: block; margin-bottom: 5px;">Set Target Humidity:</label>
+                         <input type="range" id="fanTargetHumiditySlider" name="target_humidity" min="40" max="90" value="70" step="1"
+                             oninput="updateFanTargetDisplay(this.value)" onchange="setFanTargetHumidity(this.value)" class="brightness-slider">
+                         <span id="fan-target-humidity-value" class="brightness-value">70%</span>
+                     </div>
+                </div>
+            </div>
+            <!-- End Fan Control Section -->
+        </div> <!-- End wrapper div -->
 
     </div> <!-- End .controls -->
 
