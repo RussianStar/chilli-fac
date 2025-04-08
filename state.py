@@ -48,6 +48,9 @@ class SystemState:
 
     def __post_init__(self):
         """Initialize components after dataclass initialization"""
+        # Get initial state from config, default to empty dict if not found
+        initial_state = self.config.get('initial_state', {})
+
         self.pumps = self.config['database_timeout']
         self.wtrctrl = Hydro(logger=self.logger, gpio_config=self.config,debug= self.debug)
         
@@ -68,43 +71,70 @@ class SystemState:
         self.static_light_states = {
             int(k): False for k in self.config['static_light_pins']
         }
+
+        # Initialize auto states from config or defaults
+        initial_static_auto = initial_state.get('static_lights_auto', {})
         self.static_light_auto_states = {
-            int(k): {
-                "enabled": False,
-                "start_time": None,
-                "duration_hours": None
-            } for k in self.config['static_light_pins']
-        }
-        self.zeus_auto_states = {
-            int(k): {
-                "enabled": False,
-                "start_time": None,
-                "duration_hours": None,
-                "brightness": None
-            } for k in self.config['light_pins']
-        }
-        self.valve_states = {
-            int(k): False for k in self.config['valve_pins']
-        }
-        self.watering_auto_state = {
-            "enabled": False,
-            "start_time": None
-        }
-        
-        # Initialize watering durations (default 3 minutes per valve)
-        self.watering_durations = {
-            int(k): 180 for k in self.config['valve_pins']
+            int(k): initial_static_auto.get(str(k), {
+                "enabled": False, "start_time": None, "duration_hours": None
+            }) for k in self.config['static_light_pins']
         }
 
-        # Initialize Fan Controller
+        initial_zeus_auto = initial_state.get('zeus_lights_auto', {})
+        self.zeus_auto_states = {
+            int(k): initial_zeus_auto.get(str(k), {
+                "enabled": False, "start_time": None, "duration_hours": None, "brightness": None
+            }) for k in self.config['light_pins']
+        }
+
+        self.valve_states = {
+            int(k): False for k in self.config['valve_pins'] # Keep default off state
+        }
+
+        # Initialize watering auto state from config or defaults
+        initial_watering_auto = initial_state.get('watering', {}).get('auto_mode', {})
+        self.watering_auto_state = {
+            "enabled": initial_watering_auto.get('enabled', False),
+            "start_time": initial_watering_auto.get('start_time', None)
+        }
+        
+        # Initialize watering durations from config or defaults (default 180 seconds)
+        initial_watering_durations = initial_state.get('watering', {}).get('durations', {})
+        self.watering_durations = {
+            int(k): initial_watering_durations.get(str(k), 180) for k in self.config['valve_pins']
+        }
+
+        # Initialize sensor configurations from config or defaults
+        self.sensor_configs = initial_state.get('sensors', {})
+
+        # Initialize Fan Controller and its state from config or defaults
         if 'PIN_FAN' in self.config:
             self.fanctrl = FanControl(logger=self.logger, state=self, gpio_pin=self.config['PIN_FAN'], debug=self.debug) # Pass self (state)
-            self.fan_state = self.fanctrl.get_status() # Initialize fan state
+            # Get initial hardware status first
+            current_fan_status = self.fanctrl.get_status()
+            # Get fan config from initial_state
+            initial_fan_config = initial_state.get('fan', {})
+            # Merge config over hardware status (config takes precedence)
+            self.fan_state = {
+                "target_humidity": initial_fan_config.get('target_humidity', current_fan_status.get('target_humidity', 65.0)),
+                "control_active": initial_fan_config.get('control_active', current_fan_status.get('control_active', False)),
+                "manual_on": initial_fan_config.get('manual_on', current_fan_status.get('manual_on', False)),
+                "current_humidity": current_fan_status.get('current_humidity', None), # Keep current reading
+                "is_on": current_fan_status.get('is_on', False) # Keep current on/off status
+            }
+            # Apply initial config settings to the controller if they differ from hardware state
+            if self.fan_state['target_humidity'] != current_fan_status.get('target_humidity'):
+                 self.fanctrl.set_target_humidity(self.fan_state['target_humidity'])
+            if self.fan_state['control_active'] != current_fan_status.get('control_active'):
+                 self.fanctrl.set_control_active(self.fan_state['control_active'])
+            # Manual state needs careful handling - only apply if control is inactive
+            if not self.fan_state['control_active'] and self.fan_state['manual_on'] != current_fan_status.get('manual_on'):
+                 self.fanctrl.set_manual(self.fan_state['manual_on'])
+
         else:
             self.logger.error("PIN_FAN not found in config.json. Fan control will be unavailable.")
-            # Create a dummy FanControl or handle appropriately if needed elsewhere
-            # For now, accessing self.fanctrl will raise an AttributeError if PIN_FAN is missing
-            pass # Or initialize self.fanctrl to None and check elsewhere
+            self.fanctrl = None # Explicitly set to None
+            self.fan_state = {} # Empty state if no fan controller
 
         self.camera_endpoints = self.config['camera_endpoints']
 
