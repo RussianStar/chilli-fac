@@ -153,7 +153,7 @@ class HydroControlApp:
         """Endpoint to trigger the watering sequence with progress tracking."""
         try:
             # Check if a watering sequence is already running
-            if hasattr(self.current_state, 'watering_task') and not self.current_state.watering_task.done():
+            if hasattr(self.current_state, 'watering_task') and not hasattr(self.current_state.watering_task, 'done' ):
                 return web.json_response({
                     'status': 'error',
                     'message': 'A watering sequence is already in progress'

@@ -56,13 +56,13 @@ class Hydro(gpio_device):
         if valve_num not in range(1, self.num_valves + 1):
             raise ValueError(f"Invalid valve number[{valve_num}]. Must be 1-{self.num_valves}")
             
-        self.logger[0].info(f"Setting valve {valve_num} to {state}")
         if self.debug:
             return state
 
         pin = self.gpio_config["valve_pins"][str(valve_num)]
         import RPi.GPIO as GPIO
         GPIO.output(pin, GPIO.LOW if state else GPIO.HIGH)
+        self.logger[0].info(f"Setting valve {valve_num} to {state}")
         return state
         
     def set_pump(self, state: bool):

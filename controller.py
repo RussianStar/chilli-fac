@@ -320,7 +320,7 @@ class Controller:
 
     # --- Watering Methods ---
 
-    def check_and_execute_watering(self, current_state: SystemState):
+    async def check_and_execute_watering(self, current_state: SystemState):
         """
         Check watering triggers and execute watering if needed
         
@@ -337,7 +337,7 @@ class Controller:
                 current_state = self.set_watering_durations(current_state, durations)
                 
                 # Execute watering sequence
-                current_state = self.execute_watering_sequence(current_state)
+                current_state = await self.execute_watering_sequence(current_state)
                 
                 # Reset trigger
                 current_state.watering_triggers[stage] = False
@@ -409,6 +409,7 @@ class Controller:
                                     )
                                 current_zone = None
                                 
+                            self._logger.info(f"Setting actor [{device}] to [{state}]")
                             current_state.valve_states[id] = current_state.wtrctrl.set_valve(id, state)
                         elif device == 'pump':
                             current_state.pump_states[1] = current_state.wtrctrl.set_pump(state)
