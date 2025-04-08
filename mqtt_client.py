@@ -73,6 +73,8 @@ class MQTTClient:
             sensor_topic_wildcard = f"{self.sensor_data_topic_prefix}#"
             client.subscribe(sensor_topic_wildcard)
             print(f"Subscribed to sensor data topic: {sensor_topic_wildcard}")
+            # Publish initial status upon successful connection
+            self.publish_status()
         else:
             connection_errors = {
                 1: "Connection refused - incorrect protocol version",
@@ -206,3 +208,26 @@ class MQTTClient:
         """Disconnect from MQTT broker"""
         self.client.loop_stop()
         self.client.disconnect()
+
+    def publish_status(self):
+        """
+        Gathers the current system status and publishes it to the MQTT status topic.
+        """
+        try:
+            status_payload = self.state.get_status_payload()
+            status_json = json.dumps(status_payload, indent=2) # Use indent for readability if needed
+            topic = "chili-fac/status"
+            result, mid = self.client.publish(topic, status_json, qos=1) # Use QoS 1 for reliability
+
+            if result == mqtt.MQTT_ERR_SUCCESS:
+                print(f"Successfully published status to {topic}") # Use print or logger
+            else:
+                print(f"Failed to publish status to {topic}. Error code: {result}") # Use print or logger
+
+        except TypeError as te:
+            # Handle potential issues with non-serializable data in the payload
+            print(f"Error serializing status payload to JSON: {te}") # Use print or logger
+            # Optionally log the problematic payload for debugging
+            # print(f"Problematic payload: {status_payload}")
+        except Exception as e:
+            print(f"An error occurred while publishing status: {e}") # Use print or logger

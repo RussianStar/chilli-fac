@@ -37,17 +37,48 @@ class HydroControlApp:
             db=self.db,
             logger=self.logger,
             config=self.config,
-            debug=self.debug
+            debug=self.debug,
+            status_update_callback=self._trigger_mqtt_status_update # Pass the trigger method
         )
         self.app = self._create_web_app()
         self.status_task = None
         self.humidity_check_task = None # Add task for humidity check
+        self.mqtt_status_task = None # Add task for periodic MQTT status
         
         # Initialize MQTT client if configured
+        # Initialize MQTT client if configured
+        self.mqtt_client = None # Initialize as None
         if 'mqtt' in self.config:
-            from mqtt_client import MQTTClient
-            self.mqtt_client = MQTTClient(self.current_state, self.config)
-            self.mqtt_client.connect()
+            try:
+                from mqtt_client import MQTTClient
+                self.mqtt_client = MQTTClient(self.current_state, self.config)
+                if not self.mqtt_client.connect():
+                    self.logger.error("MQTT Client failed to connect during initialization.")
+                    self.mqtt_client = None # Set back to None if connection failed
+                else:
+                    self.logger.info("MQTT Client connected successfully.")
+            except ImportError:
+                self.logger.error("mqtt_client.py not found or paho-mqtt not installed. MQTT features disabled.")
+            except Exception as e:
+                self.logger.error(f"Failed to initialize MQTT client: {e}", exc_info=True)
+
+    def _trigger_mqtt_status_update(self):
+        """Safely triggers the MQTT status update if the client is available."""
+        if self.mqtt_client:
+            try:
+                # Run in a separate task to avoid blocking the caller
+                asyncio.create_task(self._publish_mqtt_status_async())
+            except Exception as e:
+                self.logger.error(f"Error scheduling MQTT status update: {e}", exc_info=True)
+        else:
+            self.logger.debug("MQTT client not available, skipping status update trigger.")
+
+    async def _publish_mqtt_status_async(self):
+        """Asynchronously publish status to prevent blocking."""
+        if self.mqtt_client:
+            # Add a small delay to allow state changes to settle if needed
+            # await asyncio.sleep(0.1)
+            self.mqtt_client.publish_status()
 
     @classmethod
     def _load_config(cls) -> Dict[str, Any]:
@@ -689,6 +720,9 @@ class HydroControlApp:
             # Start background tasks
             self.status_task = asyncio.create_task(self._log_status())
             self.humidity_check_task = asyncio.create_task(self._periodic_humidity_check()) # Start humidity check task
+            # Start MQTT status task only if client initialized successfully
+            if self.mqtt_client:
+                self.mqtt_status_task = asyncio.create_task(self._periodic_mqtt_status())
 
             # Start web server
             runner = web.AppRunner(self.app)
@@ -742,6 +776,14 @@ class HydroControlApp:
             except asyncio.CancelledError:
                 self.logger.debug("Humidity check task already cancelled.")
 
+        # Cancel MQTT status task
+        if self.mqtt_status_task:
+            self.mqtt_status_task.cancel()
+            try:
+                await self.mqtt_status_task
+            except asyncio.CancelledError:
+                self.logger.debug("MQTT status task already cancelled.")
+
         # Perform state cleanup (includes GPIO cleanup for all devices)
         if hasattr(self, 'current_state') and self.current_state:
              self.current_state.cleanup()
@@ -771,6 +813,29 @@ class HydroControlApp:
                 break
             except Exception as e:
                 self.logger.error(f"Error in periodic humidity check: {str(e)}", exc_info=True)
+                # Wait a bit longer before retrying after an error
+                await asyncio.sleep(60)
+
+    async def _periodic_mqtt_status(self) -> None:
+        """Periodically publish system status via MQTT."""
+        MQTT_STATUS_INTERVAL = 300 # seconds (5 minutes)
+        self.logger.info(f"Starting periodic MQTT status publishing every {MQTT_STATUS_INTERVAL} seconds.")
+        while True:
+            try:
+                # Wait first, then publish
+                await asyncio.sleep(MQTT_STATUS_INTERVAL)
+                if self.mqtt_client: # Ensure client still exists
+                    self.logger.debug("Publishing periodic MQTT status...")
+                    self.mqtt_client.publish_status()
+                else:
+                    self.logger.warning("MQTT client not available, skipping periodic status publish.")
+                    # Optionally break the loop or wait longer if the client might reconnect
+                    # break
+            except asyncio.CancelledError:
+                self.logger.info("Periodic MQTT status task cancelled.")
+                break
+            except Exception as e:
+                self.logger.error(f"Error in periodic MQTT status publishing: {str(e)}", exc_info=True)
                 # Wait a bit longer before retrying after an error
                 await asyncio.sleep(60)
 

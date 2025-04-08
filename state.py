@@ -6,6 +6,8 @@ from lux import Lux
 from static_light import StaticLight
 from fan_control import FanControl # Import the new FanControl class
 import itertools
+import json
+from datetime import datetime
 
 @dataclass
 class SystemState:
@@ -174,3 +176,63 @@ class SystemState:
                     
         except Exception as e:
             self.logger.error(f"Error during GPIO cleanup: {e}")
+
+    def get_status_payload(self) -> dict:
+        """
+        Gathers the current system state into a dictionary suitable for JSON serialization.
+        """
+        # Get latest sensor readings (moisture, temp, humidity)
+        latest_sensor_readings = {}
+        for sensor_id, readings in self.sensor_readings.items():
+            if readings:
+                latest = readings[-1].copy() # Get the last reading
+                # Ensure timestamp is serializable (ISO format string)
+                if isinstance(latest.get('timestamp'), datetime):
+                    latest['timestamp'] = latest['timestamp'].isoformat()
+                latest_sensor_readings[sensor_id] = latest
+            else:
+                latest_sensor_readings[sensor_id] = None # Indicate no readings yet
+
+        # Get latest humidity readings (if stored separately)
+        latest_humidity_readings = {}
+        for sensor_id, readings in self.humidity_readings.items():
+             if readings:
+                 latest = readings[-1].copy()
+                 if isinstance(latest.get('timestamp'), datetime):
+                     latest['timestamp'] = latest['timestamp'].isoformat()
+                 latest_humidity_readings[sensor_id] = latest
+             else:
+                 latest_humidity_readings[sensor_id] = None
+
+        # Consolidate fan state, ensuring it exists
+        fan_status = self.fan_state.copy() if hasattr(self, 'fanctrl') and self.fanctrl else {}
+        # Update with live status if controller exists
+        if hasattr(self, 'fanctrl') and self.fanctrl:
+            live_fan_status = self.fanctrl.get_status()
+            fan_status.update(live_fan_status) # Merge live status (is_on, target, active)
+
+        payload = {
+            "timestamp": datetime.now().isoformat(),
+            "lights": {
+                "zeus": self.light_states,
+                "static": self.static_light_states,
+                "auto_zeus": self.zeus_auto_states,
+                "auto_static": self.static_light_auto_states,
+            },
+            "watering": {
+                "valves": self.valve_states,
+                "pump": self.pump_states.get(1, False), # Assuming pump ID 1
+                "auto_mode": self.watering_auto_state,
+                "durations": self.watering_durations,
+                "progress": self.watering_progress, # Include current progress
+                "active_task": bool(self.watering_task), # Indicate if a task is running/queued
+            },
+            "fan": fan_status,
+            "sensors": {
+                "configs": self.sensor_configs,
+                "latest_readings": latest_sensor_readings,
+                # "latest_humidity": latest_humidity_readings, # Redundant if included in sensor_readings
+            },
+            # Add other relevant states if needed
+        }
+        return payload

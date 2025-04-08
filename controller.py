@@ -3,13 +3,16 @@ from state import SystemState
 from db import DatabaseAdapter
 # import statistics # No longer needed
 
+from typing import Callable, Optional
+
 class Controller:
 
-    def __init__(self, db: DatabaseAdapter, config,logger,debug = False) -> None:
+    def __init__(self, db: DatabaseAdapter, config, logger, debug: bool = False, status_update_callback: Optional[Callable] = None) -> None:
         self._logger = logger
         self._db = db
         self._debug = debug
         self._config = config
+        self._status_update_callback = status_update_callback # Store the callback
 
     async def _log_status_async(self, current_state):
         await self._db.log_status_without_images(current_state)
@@ -27,6 +30,9 @@ class Controller:
 
             self._log_status_fire_and_forget(current_state)
             self._logger.info(f"Setting light #{id} brightness to {brightness}%")
+            # Trigger status update
+            if self._status_update_callback:
+                self._status_update_callback()
 
         return current_state
 
@@ -42,6 +48,9 @@ class Controller:
                 current_state.static_light_states[id] = True
 
             self._logger.info(f"Toggling static light #{id} to {current_state.static_light_states[id]}")
+            # Trigger status update
+            if self._status_update_callback:
+                self._status_update_callback()
 
 
         self._log_status_fire_and_forget(current_state)
@@ -181,6 +190,9 @@ class Controller:
             self._logger.info("Disabled auto mode for watering")
             
         self._log_status_fire_and_forget(current_state)
+        # Trigger status update
+        if self._status_update_callback:
+            self._status_update_callback()
         return current_state
         
     def get_watering_auto_settings(self, current_state):
@@ -216,6 +228,9 @@ class Controller:
                 
         self._logger.info(f"Updated watering durations: {current_state.watering_durations}")
         self._log_status_fire_and_forget(current_state)
+        # Trigger status update
+        if self._status_update_callback:
+            self._status_update_callback()
         return current_state
 
     def calculate_total_watering_duration(self, current_state):
@@ -231,6 +246,8 @@ class Controller:
             current_state.fan_state = current_state.fanctrl.get_status() # Update state
             self._logger.info(f"Controller set fan target humidity to {target}%.")
             self._log_status_fire_and_forget(current_state) # Log state change
+            if self._status_update_callback:
+                self._status_update_callback()
         else:
             self._logger.error("Fan controller not available in state.")
         return current_state
@@ -246,6 +263,8 @@ class Controller:
                 self._logger.info("Controller deactivated automatic fan control.")
             current_state.fan_state = current_state.fanctrl.get_status() # Update state
             self._log_status_fire_and_forget(current_state) # Log state change
+            if self._status_update_callback:
+                self._status_update_callback()
         else:
             self._logger.error("Fan controller not available in state.")
         return current_state
@@ -266,6 +285,8 @@ class Controller:
                 self._logger.info("Controller manually turned fan OFF.")
             current_state.fan_state = current_state.fanctrl.get_status() # Update state
             self._log_status_fire_and_forget(current_state) # Log state change
+            if self._status_update_callback:
+                self._status_update_callback()
         else:
             self._logger.error("Fan controller not available in state.")
         return current_state
@@ -321,6 +342,9 @@ class Controller:
                 # Reset trigger
                 current_state.watering_triggers[stage] = False
                 self._logger.info(f"Executed watering for stage {stage} based on sensor trigger")
+                # Trigger status update after initiating watering based on sensor
+                if self._status_update_callback:
+                    self._status_update_callback()
                 
         return current_state
 
@@ -340,6 +364,10 @@ class Controller:
             schedule = current_state.wtrctrl.create_custom_schedule(current_state.watering_durations)
             self._logger.info(f"Using custom schedule with durations: {current_state.watering_durations}")
         
+        # Trigger status update at the start of the sequence execution
+        if self._status_update_callback:
+            self._status_update_callback()
+
         # Calculate total wait time for progress tracking
         total_wait_time = sum(step for step in schedule if not isinstance(step, dict))
         elapsed_wait_time = 0
