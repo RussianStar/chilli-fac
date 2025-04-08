@@ -74,8 +74,8 @@
       }
     },
     "sensors": {
-       "default_sensor_1": { "stage": 1, "min_moisture": 50.0, "active": true },
-       "default_sensor_2": { "stage": 2, "min_moisture": 45.0, "active": true }
+       "default_sensor_1": { "stage": 1, "min_moisture": 50.0, "active": true, "min_adc": 1000, "max_adc": 2500 },
+       "default_sensor_2": { "stage": 2, "min_moisture": 45.0, "active": true, "min_adc": 1100, "max_adc": 2600 }
     }
   }
 }

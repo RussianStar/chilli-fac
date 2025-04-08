@@ -519,20 +519,38 @@ class HydroControlApp:
         """Endpoint to configure sensor parameters."""
         try:
             form = await request.post()
+            form = await request.post()
             sensor_id = form.get('sensor_id')
-            stage = int(form.get('stage'))
-            min_moisture = float(form.get('min_moisture'))
-            
-            if not sensor_id or stage not in [1, 2, 3] or min_moisture < 0:
-                return web.Response(text="Invalid sensor configuration", status=400)
-                
-            # Update sensor config in state
+            if not sensor_id:
+                return web.Response(text="Sensor ID is required", status=400)
+
+            try:
+                stage = int(form.get('stage'))
+                min_moisture = float(form.get('min_moisture'))
+                # Get calibration values, providing defaults if missing or invalid
+                min_adc_str = form.get('min_adc', '0')
+                max_adc_str = form.get('max_adc', '4095')
+                min_adc = int(min_adc_str) if min_adc_str.isdigit() else 0
+                max_adc = int(max_adc_str) if max_adc_str.isdigit() else 4095
+
+                if stage not in [1, 2, 3] or min_moisture < 0 or min_adc < 0 or max_adc <= min_adc:
+                    raise ValueError("Invalid sensor configuration values.")
+
+            except (ValueError, TypeError) as e:
+                 self.logger.warning(f"Invalid sensor configuration data received: {e}")
+                 return web.Response(text=f"Invalid sensor configuration data: {e}", status=400)
+
+            # Update sensor config in state, preserving existing 'active' state if updating
+            existing_config = self.current_state.sensor_configs.get(sensor_id, {})
             self.current_state.sensor_configs[sensor_id] = {
                 'stage': stage,
                 'min_moisture': min_moisture,
-                'active': True  # Default to active when added
+                'min_adc': min_adc,
+                'max_adc': max_adc,
+                'active': existing_config.get('active', True) # Keep existing active state or default to True
             }
-            
+            self.logger.info(f"Updated sensor config for {sensor_id}: {self.current_state.sensor_configs[sensor_id]}")
+
             # Return to main page
             return render(request, self.current_state)
             

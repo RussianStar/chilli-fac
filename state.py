@@ -24,9 +24,11 @@ class SystemState:
     fanctrl: FanControl = field(init=False) # Add FanControl instance
 
     # Sensor state tracking
-    sensor_configs: Dict[str, Dict] = field(default_factory=dict)  # {sensor_id: {stage: int, min_moisture: float, active: bool}}
+    # Updated sensor_configs structure: {sensor_id: {stage: int, min_moisture: float, active: bool, min_adc: int, max_adc: int}}
+    sensor_configs: Dict[str, Dict] = field(default_factory=dict)
     humidity_readings: Dict[str, List[Dict]] = field(default_factory=dict) # {sensor_id: [{timestamp, humidity}]} # Add humidity readings storage
-    sensor_readings: Dict[str, List[Dict]] = field(default_factory=dict)  # {sensor_id: [{timestamp, moisture, temp}]}
+    # Updated sensor_readings structure: {sensor_id: [{timestamp, raw_adc, moisture_percent, temp}]}
+    sensor_readings: Dict[str, List[Dict]] = field(default_factory=dict)
     watering_triggers: Dict[int, bool] = field(default_factory=dict)  # {stage: should_water}
     
     # Initialize state tracking
@@ -104,8 +106,18 @@ class SystemState:
             int(k): initial_watering_durations.get(str(k), 180) for k in self.config['valve_pins']
         }
 
-        # Initialize sensor configurations from config or defaults
-        self.sensor_configs = initial_state.get('sensors', {})
+        # Initialize sensor configurations from config or defaults, ensuring calibration values are present
+        initial_sensors = initial_state.get('sensors', {})
+        self.sensor_configs = {}
+        for sensor_id, config_data in initial_sensors.items():
+            self.sensor_configs[sensor_id] = {
+                'stage': config_data.get('stage', 1), # Default stage 1
+                'min_moisture': config_data.get('min_moisture', 50.0), # Default threshold 50%
+                'active': config_data.get('active', True), # Default active
+                'min_adc': config_data.get('min_adc', 0), # Default min ADC 0 (needs calibration)
+                'max_adc': config_data.get('max_adc', 4095) # Default max ADC (needs calibration)
+            }
+
 
         # Initialize Fan Controller and its state from config or defaults
         if 'PIN_FAN' in self.config:
@@ -126,10 +138,10 @@ class SystemState:
             if self.fan_state['target_humidity'] != current_fan_status.get('target_humidity'):
                  self.fanctrl.set_target_humidity(self.fan_state['target_humidity'])
             if self.fan_state['control_active'] != current_fan_status.get('control_active'):
-                 self.fanctrl.set_control_active(self.fan_state['control_active'])
+                 self.fanctrl.activate_control()
             # Manual state needs careful handling - only apply if control is inactive
             if not self.fan_state['control_active'] and self.fan_state['manual_on'] != current_fan_status.get('manual_on'):
-                 self.fanctrl.set_manual(self.fan_state['manual_on'])
+                 self.fanctrl.turn_on()
 
         else:
             self.logger.error("PIN_FAN not found in config.json. Fan control will be unavailable.")

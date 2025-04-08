@@ -3,6 +3,9 @@ from datetime import datetime
 import json
 from typing import Dict, List
 
+# Import the calibration function
+from helper import calculate_moisture_percentage
+
 class MQTTClient:
     def __init__(self, state, config, client=None):
         """
@@ -125,13 +128,29 @@ class MQTTClient:
             
         # Extract all relevant values
         timestamp = datetime.now().isoformat()
-        moisture = float(data['ADC'])
+        raw_adc = int(data['ADC']) # Keep as int for calculation
         temperature = float(data['Temperature'])
         humidity = float(data.get('Humidity', 0.0)) # Use .get with default if Humidity might be missing
 
+        # Get calibration values from state
+        sensor_config = self.state.sensor_configs.get(sensor_id)
+        moisture_percent = None
+        if sensor_config:
+            min_adc = sensor_config.get('min_adc', 0)
+            max_adc = sensor_config.get('max_adc', 4095) # Use defaults if not set
+            moisture_percent = calculate_moisture_percentage(raw_adc, min_adc, max_adc)
+        else:
+            # Handle case where sensor data arrives before config is set (e.g., during startup)
+            # Or log a warning
+            print(f"Warning: Received data for unconfigured sensor {sensor_id}. Cannot calculate percentage.")
+            # Optionally calculate with defaults anyway, or store raw only
+            moisture_percent = calculate_moisture_percentage(raw_adc, 0, 4095) # Example: Calculate with defaults
+
+
         self.state.sensor_readings[sensor_id].append({
             'timestamp': timestamp,
-            'moisture': moisture,
+            'raw_adc': raw_adc, # Store raw value
+            'moisture_percent': moisture_percent, # Store calculated percentage
             'temperature': temperature,
             'humidity': humidity # Store humidity here
         })
@@ -139,32 +158,47 @@ class MQTTClient:
         # Keep only last 24 readings (as per existing code)
         self.state.sensor_readings[sensor_id] = self.state.sensor_readings[sensor_id][-24:]
         
-        # Check watering triggers if this sensor is configured
-        if sensor_id in self.state.sensor_configs:
-            self.check_watering_trigger(sensor_id)
+        # Check watering triggers if this sensor is configured and we have a percentage
+        if sensor_config and moisture_percent is not None:
+            self.check_watering_trigger(sensor_id, moisture_percent) # Pass the calculated percentage
     
-    def check_watering_trigger(self, sensor_id: str):
+    def check_watering_trigger(self, sensor_id: str, current_moisture_percent: float):
         """
         Check if watering should be triggered based on sensor data
         
         Args:
             sensor_id: Sensor to check triggers for
         """
-        config = self.state.sensor_configs[sensor_id]
+        config = self.state.sensor_configs.get(sensor_id)
+        if not config: # Should not happen if called correctly, but safety check
+             return
+
+        # Use the configured threshold (which is already a percentage)
+        min_moisture_threshold = config['min_moisture'] 
+        
+        # Trigger if the current reading is below the threshold
+        # Note: The original logic checked the last 4 readings. 
+        # We'll keep that logic but use the percentage.
         readings = self.state.sensor_readings.get(sensor_id, [])
-        
-        # Need at least 4 readings to trigger
         if len(readings) < 4:
-            return
-            
-        # Get last 4 moisture readings
-        last_four = [r['moisture'] for r in readings[-4:]]
-        min_moisture = config['min_moisture']
-        
-        # Trigger if all last 4 readings are below threshold
-        if all(m < min_moisture for m in last_four):
-            self.state.watering_triggers[config['stage']] = True
-            print(f"Watering triggered for stage {config['stage']} (sensor {sensor_id})")
+             return # Not enough data yet
+
+        # Get last 4 moisture percentages (handle None if calculation failed previously)
+        last_four_percent = [r.get('moisture_percent') for r in readings[-4:]]
+
+        # Check if all last 4 readings are valid (not None) and below threshold
+        if all(p is not None and p < min_moisture_threshold for p in last_four_percent):
+            stage = config.get('stage')
+            if stage: # Ensure stage is configured
+                self.state.watering_triggers[stage] = True
+                print(f"Watering triggered for stage {stage} (sensor {sensor_id}) based on moisture percentage.")
+        # Optional: Add logic to reset the trigger if moisture goes above threshold?
+        # else:
+        #     stage = config.get('stage')
+        #     if stage and stage in self.state.watering_triggers:
+        #         self.state.watering_triggers[stage] = False
+        #         print(f"Watering trigger reset for stage {stage} (sensor {sensor_id}).")
+
 
     # Removed process_humidity_data function as it's no longer needed
 
