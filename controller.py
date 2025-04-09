@@ -156,86 +156,31 @@ class Controller:
             
         return None
         
-    def set_watering_auto_mode(self, current_state, auto_mode, start_time=None):
+    def check_sensor_watering(self, current_state: SystemState):
         """
-        Set auto mode for watering
-        
-        Args:
-            current_state: The current system state
-            auto_mode: Boolean indicating whether to enable (True) or disable (False) auto mode
-            start_time: Time to execute watering in 24-hour format (HH:MM)
-        
-        Returns:
-            Updated system state
-        """
-        watering_controller = current_state.wtrctrl
-        
-        if auto_mode:
-            if start_time is None:
-                self._logger.error("Cannot enable auto mode for watering: missing start time")
-                return current_state
-                
-            watering_controller.set_auto_mode(start_time)
-            current_state.watering_auto_state = {
-                "enabled": True,
-                "start_time": start_time
-            }
-            self._logger.info(f"Enabled auto mode for watering: start at {start_time}")
-        else:
-            watering_controller.disable_auto_mode()
-            current_state.watering_auto_state = {
-                "enabled": False,
-                "start_time": None
-            }
-            self._logger.info("Disabled auto mode for watering")
-            
-        self._log_status_fire_and_forget(current_state)
-        # Trigger status update
-        if self._status_update_callback:
-            self._status_update_callback()
-        return current_state
-        
-    def get_watering_auto_settings(self, current_state):
-        """
-        Get auto mode settings for watering
+        Checks sensor readings and triggers watering if needed.
+        Should be called periodically (e.g. every few minutes).
         
         Args:
             current_state: The current system state
             
         Returns:
-            Dictionary with auto mode settings
-        """
-        watering_controller = current_state.wtrctrl
-        settings = watering_controller.get_auto_settings()
-        settings['durations'] = current_state.watering_durations
-        return settings
-        
-    def set_watering_durations(self, current_state, durations):
-        """
-        Set durations for each watering zone
-        
-        Args:
-            current_state: The current system state
-            durations: Dictionary mapping valve IDs to durations in seconds
-        
-        Returns:
             Updated system state
         """
-        # Update the durations in the state
-        for valve_id, duration in durations.items():
-            if valve_id in current_state.watering_durations:
-                current_state.watering_durations[valve_id] = duration
-                
-        self._logger.info(f"Updated watering durations: {current_state.watering_durations}")
-        self._log_status_fire_and_forget(current_state)
-        # Trigger status update
-        if self._status_update_callback:
-            self._status_update_callback()
+        if not hasattr(current_state, 'wtrctrl') or not current_state.wtrctrl:
+            self._logger.error("Watering controller not available in state.")
+            return current_state
+            
+        try:
+            current_state.wtrctrl.check_sensor_watering()
+            self._logger.debug("Executed sensor watering check.")
+        except Exception as e:
+            self._logger.error(f"Error during sensor watering check: {e}", exc_info=True)
+            
         return current_state
 
-    def calculate_total_watering_duration(self, current_state):
-        schedule = current_state.wtrctrl.DEFAULT_SCHEDULE
-        return sum(step for step in schedule if not isinstance(step, dict))
+    # Removed set_watering_auto_mode, get_watering_auto_settings, 
+    # set_watering_durations, calculate_total_watering_duration
 
     # --- Fan Control Methods ---
 
@@ -322,7 +267,8 @@ class Controller:
 
     async def check_and_execute_watering(self, current_state: SystemState):
         """
-        Check watering triggers and execute watering if needed
+        Check sensor watering conditions and execute if needed.
+        Now just calls check_sensor_watering() since watering is handled internally.
         
         Args:
             current_state: Current system state
@@ -330,23 +276,7 @@ class Controller:
         Returns:
             Updated system state
         """
-        for stage, should_water in current_state.watering_triggers.items():
-            if should_water:
-                # Set custom 300s duration for this stage
-                durations = {stage: 300}
-                current_state = self.set_watering_durations(current_state, durations)
-                
-                # Execute watering sequence
-                current_state = await self.execute_watering_sequence(current_state)
-                
-                # Reset trigger
-                current_state.watering_triggers[stage] = False
-                self._logger.info(f"Executed watering for stage {stage} based on sensor trigger")
-                # Trigger status update after initiating watering based on sensor
-                if self._status_update_callback:
-                    self._status_update_callback()
-                
-        return current_state
+        return self.check_sensor_watering(current_state)
 
     async def execute_watering_sequence(self, current_state, progress_callback=None, schedule=None):
         """

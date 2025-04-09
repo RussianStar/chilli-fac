@@ -42,11 +42,11 @@ class SystemState:
     static_light_auto_states: Dict[int, Dict] = field(init=False, default_factory=dict)
     zeus_auto_states: Dict[int, Dict] = field(init=False, default_factory=dict)
     valve_states: Dict[int, bool] = field(init=False, default_factory=dict)
-    watering_auto_state: Dict = field(init=False, default_factory=dict)
-    watering_durations: Dict[int, int] = field(init=False, default_factory=dict)
+    # watering_auto_state: Dict = field(init=False, default_factory=dict) # Removed old auto state
+    # watering_durations: Dict[int, int] = field(init=False, default_factory=dict) # Removed old durations
     camera_endpoints: Dict = field(init=False)
-    
-    watering_progress: Dict = field(default_factory=dict)
+
+    watering_progress: Dict = field(default_factory=dict) # Keep for potential manual/future use
     watering_task: Dict = field(default_factory=dict)
     fan_state: Dict = field(init=False, default_factory=dict) # Add fan state storage
 
@@ -56,8 +56,9 @@ class SystemState:
         initial_state = self.config.get('initial_state', {})
 
         self.pumps = self.config['database_timeout']
-        self.wtrctrl = Hydro(logger=self.logger, gpio_config=self.config,debug= self.debug)
-        
+        # Pass self (the state instance) to Hydro constructor
+        self.wtrctrl = Hydro(logger=self.logger, gpio_config=self.config, state=self, debug=self.debug)
+
         # Initialize light controllers and states
         self.zeus = {
             int(k): Lux(self.logger, pin=v, freq=1000, debug=self.debug) 
@@ -222,10 +223,14 @@ class SystemState:
             "watering": {
                 "valves": self.valve_states,
                 "pump": self.pump_states.get(1, False), # Assuming pump ID 1
-                "auto_mode": self.watering_auto_state,
-                "durations": self.watering_durations,
-                "progress": self.watering_progress, # Include current progress
-                "active_task": bool(self.watering_task), # Indicate if a task is running/queued
+                # Removed old auto_mode and durations from status
+                # "auto_mode": self.watering_auto_state,
+                # "durations": self.watering_durations,
+                "progress": self.watering_progress, # Keep for potential manual/future use
+                "active_task": bool(self.watering_task), # Keep for potential manual/future use
+                # Optionally add new hydro internal states if needed for UI:
+                # "sensor_watering_active": dict(self.wtrctrl._watering_active),
+                # "sensor_watering_cooldown": dict(self.wtrctrl._waiting_for_readings),
             },
             "fan": fan_status,
             "sensors": {
