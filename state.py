@@ -84,6 +84,13 @@ class SystemState:
                 "enabled": False, "start_time": None, "duration_hours": None
             }) for k in self.config['static_light_pins']
         }
+        # Apply initial static light auto modes
+        for light_id, auto_config in self.static_light_auto_states.items():
+            if auto_config.get("enabled"):
+                self.logger.info(f"Applying initial auto mode for static light {light_id}: {auto_config}")
+                self.static_lights[light_id].set_auto_mode(
+                    auto_config["start_time"], auto_config["duration_hours"]
+                )
 
         initial_zeus_auto = initial_state.get('zeus_lights_auto', {})
         self.zeus_auto_states = {
@@ -91,26 +98,34 @@ class SystemState:
                 "enabled": False, "start_time": None, "duration_hours": None, "brightness": None
             }) for k in self.config['light_pins']
         }
+        # Apply initial Zeus light auto modes
+        for light_id, auto_config in self.zeus_auto_states.items():
+            if auto_config.get("enabled"):
+                 self.logger.info(f"Applying initial auto mode for Zeus light {light_id}: {auto_config}")
+                 self.zeus[light_id].set_auto_mode(
+                     auto_config["start_time"], auto_config["duration_hours"], auto_config.get("brightness", 100) # Use configured brightness or default 100
+                 )
 
         self.valve_states = {
             int(k): False for k in self.config['valve_pins'] # Keep default off state
         }
 
-        # Initialize watering auto state from config or defaults
-        initial_watering_auto = initial_state.get('watering', {}).get('auto_mode', {})
-        self.watering_auto_state = {
-            "enabled": initial_watering_auto.get('enabled', False),
-            "start_time": initial_watering_auto.get('start_time', None)
-        }
-        
-        # Initialize watering durations from config or defaults (default 180 seconds)
-        initial_watering_durations = initial_state.get('watering', {}).get('durations', {})
-        self.watering_durations = {
-            int(k): initial_watering_durations.get(str(k), 180) for k in self.config['valve_pins']
-        }
+        # Removed initialization for watering_auto_state and watering_durations
+        # # Initialize watering auto state from config or defaults
+        # initial_watering_auto = initial_state.get('watering', {}).get('auto_mode', {})
+        # self.watering_auto_state = {
+        #     "enabled": initial_watering_auto.get('enabled', False),
+        #     "start_time": initial_watering_auto.get('start_time', None)
+        # }
+        #
+        # # Initialize watering durations from config or defaults (default 180 seconds)
+        # initial_watering_durations = initial_state.get('watering', {}).get('durations', {})
+        # self.watering_durations = {
+        #     int(k): initial_watering_durations.get(str(k), 180) for k in self.config['valve_pins']
+        # }
 
         # Initialize sensor configurations from config or defaults, ensuring calibration values are present
-        initial_sensors = initial_state.get('sensors', {})
+        initial_sensors = self.config.get('sensors', {}) # Get from main config directly
         self.sensor_configs = {}
         for sensor_id, config_data in initial_sensors.items():
             self.sensor_configs[sensor_id] = {
@@ -137,14 +152,21 @@ class SystemState:
                 "current_humidity": current_fan_status.get('current_humidity', None), # Keep current reading
                 "is_on": current_fan_status.get('is_on', False) # Keep current on/off status
             }
-            # Apply initial config settings to the controller if they differ from hardware state
-            if self.fan_state['target_humidity'] != current_fan_status.get('target_humidity'):
-                 self.fanctrl.set_target_humidity(self.fan_state['target_humidity'])
-            if self.fan_state['control_active'] != current_fan_status.get('control_active'):
-                 self.fanctrl.activate_control()
-            # Manual state needs careful handling - only apply if control is inactive
-            if not self.fan_state['control_active'] and self.fan_state['manual_on'] != current_fan_status.get('manual_on'):
-                 self.fanctrl.turn_on()
+            # Apply initial config settings to the controller based on the loaded fan_state
+            self.logger.info(f"Applying initial fan state: {self.fan_state}")
+            self.fanctrl.set_target_humidity(self.fan_state['target_humidity'])
+            if self.fan_state['control_active']:
+                self.fanctrl.activate_control()
+                self.logger.info("Initial fan state: Activating automatic control.")
+            else:
+                # If auto control is not active, apply manual state if specified
+                self.fanctrl.deactivate_control() # Ensure auto is off
+                if self.fan_state['manual_on']:
+                    self.fanctrl.turn_on()
+                    self.logger.info("Initial fan state: Turning fan ON manually.")
+                else:
+                    self.fanctrl.turn_off() # Ensure fan is off if not manually on
+                    self.logger.info("Initial fan state: Turning fan OFF (manual/auto inactive).")
 
         else:
             self.logger.error("PIN_FAN not found in config.json. Fan control will be unavailable.")
