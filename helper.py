@@ -2,10 +2,16 @@ import platform
 import asyncio
 from aiohttp import web
 import aiohttp_jinja2
+import importlib.util
 
 def is_raspberry_pi():
-    """Check if the system is a Raspberry Pi."""
-    return platform.system() == 'Linux' and platform.machine().startswith('arm')
+    """
+    Checks if the RPi.GPIO library is installed.
+
+    Returns:
+        bool: True if RPi.GPIO is installed, False otherwise.
+    """
+    return importlib.util.find_spec('RPi.GPIO') is not None
 
 def render(request, context):
     """Render the main template with the given context."""
