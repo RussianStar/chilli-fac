@@ -1,642 +1,676 @@
 <html>
+
 <head>
-<style>
-    /* Art Nouveau Styling */
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+    <style>
+        /* Art Nouveau Styling */
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 
-    :root {
-        --primary: #2D6852;
-        --secondary: #AC8A63;
-        --accent: #D6955B;
-        --dark: #1E3F33;
-        --light: #F8F1E3;
-        --gold: #DBAA5C;
-        --divine-glow: rgba(255, 255, 255, 0.9);
-        --divine-halo: rgba(255, 255, 255, 0.7);
-    }
-
-    body {
-        background-color: var(--light);
-        color: var(--dark);
-        font-family: 'Cormorant Garamond', serif;
-        margin: 0;
-        padding: 0;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M20,20 Q30,5 50,20 T80,20 Q95,30 80,50 T80,80 Q70,95 50,80 T20,80 Q5,70 20,50 T20,20 Z' fill='none' stroke='%23AC8A6320' stroke-width='0.5'/%3E%3C/svg%3E");
-        background-size: 120px 120px;
-    }
-
-    /* Art Nouveau Title */
-    h1 {
-        font-family: 'Playfair Display', serif;
-        text-align: center;
-        font-size: 3.5rem;
-        color: var(--dark);
-        margin: 1.5rem 0;
-        font-weight: 700;
-        position: relative;
-        letter-spacing: 1px;
-        text-shadow: 2px 2px 0px rgba(219, 170, 92, 0.2);
-    }
-
-    h1::before, h1::after {
-        content: "✦";
-        color: var(--gold);
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 2rem;
-    }
-
-    h1::before {
-        left: calc(50% - 150px);
-    }
-
-    h1::after {
-        right: calc(50% - 150px);
-    }
-
-    h2 {
-        font-family: 'Playfair Display', serif;
-        color: var(--primary);
-        font-size: 1.7rem;
-        margin-bottom: 1.2rem;
-        position: relative;
-        display: inline-block;
-        font-weight: 400;
-        font-style: italic;
-    }
-
-    h2::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        bottom: -5px;
-        height: 2px;
-        width: 100%;
-        background: linear-gradient(90deg, transparent, var(--gold), transparent);
-    }
-
-    h3 {
-        font-family: 'Cormorant Garamond', serif;
-        color: var(--dark);
-        font-size: 1.4rem;
-        margin-bottom: 1rem;
-        font-weight: 600;
-    }
-
-    /* Main container */
-    .controls {
-        max-width: 1200px;
-        margin: 2rem auto;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2.5rem;
-        padding: 1rem;
-    }
-
-    /* Art Nouveau Panel Styling */
-    .control-section {
-        position: relative;
-        background: linear-gradient(135deg, rgba(248, 241, 227, 0.95), rgba(255, 255, 255, 0.95));
-        border-radius: 5px;
-        padding: 2rem;
-        box-shadow: 0 8px 32px rgba(30, 63, 51, 0.1);
-    }
-
-    /* Art Nouveau Border Frame */
-    .control-section::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        border: 1px solid var(--gold);
-        border-radius: 5px;
-        padding: 15px;
-        pointer-events: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M0,0 L30,0 Q35,0 35,5 L35,30 Q35,35 30,35 L0,35 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M100,0 L70,0 Q65,0 65,5 L65,30 Q65,35 70,35 L100,35 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M0,100 L30,100 Q35,100 35,95 L35,70 Q35,65 30,65 L0,65 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M100,100 L70,100 Q65,100 65,95 L65,70 Q65,65 70,65 L100,65 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3C/svg%3E");
-        background-position: center;
-        background-repeat: no-repeat;
-        background-size: 100% 100%;
-        z-index: 0;
-    }
-
-    .control-section::after {
-        content: "";
-        position: absolute;
-        top: -15px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 70px;
-        height: 30px;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Cpath d='M50,0 C60,10 70,15 100,15 L100,50 L0,50 L0,15 C30,15 40,10 50,0 Z' fill='%23F8F1E3' stroke='%23DBAA5C' stroke-width='1.5'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-size: cover;
-        z-index: 1;
-    }
-
-    /* Control items */
-    .control-item {
-        position: relative;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 241, 227, 0.8));
-        border-radius: 5px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 15px rgba(30, 63, 51, 0.07);
-        z-index: 1;
-        border: 1px solid rgba(219, 170, 92, 0.3);
-    }
-
-    /* Divine Light Effect for Light Control Items */
-    .brightness-control {
-        position: relative;
-        margin: 15px 0;
-        transition: all 0.5s ease-in-out;
-    }
-
-    /* The glowing container effect */
-    .control-item:has(.brightness-control) {
-        position: relative;
-        overflow: hidden;
-    }
-
-    /* Divine light radiance based on slider value - ENHANCED WITH GRADIENT COLORS */
-    .control-item:has(.brightness-slider[value="0"]) {
-        box-shadow: 0 4px 15px rgba(30, 63, 51, 0.07);
-    }
-    .control-item:has(.brightness-slider[value^="1"]),
-    .control-item:has(.brightness-slider[value^="2"]) {
-        box-shadow: 0 0 15px 5px rgba(255, 235, 200, 0.3); /* Warm glow at low values */
-    }
-    .control-item:has(.brightness-slider[value^="3"]),
-    .control-item:has(.brightness-slider[value^="4"]) {
-        box-shadow: 0 0 20px 10px rgba(255, 235, 200, 0.4); /* Warm glow at low-medium values */
-    }
-    .control-item:has(.brightness-slider[value^="5"]),
-    .control-item:has(.brightness-slider[value^="6"]) {
-        box-shadow: 0 0 25px 15px rgba(255, 245, 220, 0.5); /* Transitioning to whiter */
-    }
-    .control-item:has(.brightness-slider[value^="7"]),
-    .control-item:has(.brightness-slider[value^="8"]) {
-        box-shadow: 0 0 35px 25px rgba(245, 250, 255, 0.6); /* Slightly cooler white */
-    }
-    .control-item:has(.brightness-slider[value^="9"]),
-    .control-item:has(.brightness-slider[value="100"]) {
-        box-shadow: 0 0 150px 85px rgba(235, 245, 255, 0.8); /* Cool blueish white at max */
-    }
-
-    /* Divine Light Inner Glow - ENHANCED WITH COLOR GRADIENT */
-    .control-item:has(.brightness-slider[value="0"])::before {
-        opacity: 0;
-    }
-    .control-item:has(.brightness-slider)::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        z-index: -1;
-        transition: opacity 0.5s ease, background 0.5s ease;
-        opacity: 0;
-    }
-
-    .control-item:has(.brightness-slider[value^="1"])::before,
-    .control-item:has(.brightness-slider[value^="2"])::before {
-        opacity: 0.3;
-        background: radial-gradient(
-            circle at center,
-            rgba(255, 230, 180, 0.8), /* Warm amber glow */
-            transparent 70%
-        );
-    }
-    .control-item:has(.brightness-slider[value^="3"])::before,
-    .control-item:has(.brightness-slider[value^="4"])::before {
-        opacity: 0.5;
-        background: radial-gradient(
-            circle at center,
-            rgba(255, 235, 190, 0.8), /* Warm white */
-            transparent 70%
-        );
-    }
-    .control-item:has(.brightness-slider[value^="5"])::before,
-    .control-item:has(.brightness-slider[value^="6"])::before {
-        opacity: 0.7;
-        background: radial-gradient(
-            circle at center,
-            rgba(255, 245, 220, 0.8), /* Neutral white */
-            transparent 70%
-        );
-    }
-    .control-item:has(.brightness-slider[value^="7"])::before,
-    .control-item:has(.brightness-slider[value^="8"])::before {
-        opacity: 0.8;
-        background: radial-gradient(
-            circle at center,
-            rgba(245, 250, 255, 0.8), /* Cool white */
-            transparent 75%
-        );
-    }
-    .control-item:has(.brightness-slider[value^="9"])::before,
-    .control-item:has(.brightness-slider[value="100"])::before {
-        opacity: 1;
-        background: radial-gradient(
-            circle at center,
-            rgba(235, 245, 255, 0.9), /* Blueish white at max */
-            transparent 80%
-        );
-    }
-
-    /* Art Nouveau Light Ray Details - ENHANCED WITH STRONGER DIVINE RAYS AND COLOR */
-    .control-item:has(.brightness-slider[value="0"])::after {
-        opacity: 0;
-    }
-    .control-item:has(.brightness-slider)::after {
-        content: "";
-        position: absolute;
-        top: -100%;
-        left: -100%;
-        right: -100%;
-        bottom: -100%;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg%3E%3Cpath d='M50,0 L50,100 M0,50 L100,50' stroke='%23FFFFFF' stroke-width='2'/%3E%3Cpath d='M14.6,14.6 L85.4,85.4 M14.6,85.4 L85.4,14.6' stroke='%23FFFFFF' stroke-width='2'/%3E%3Cpath d='M25,0 L25,100 M75,0 L75,100 M0,25 L100,25 M0,75 L100,75' stroke='%23FFFFFF' stroke-width='1'/%3E%3Cpath d='M8,8 L92,92 M8,92 L92,8' stroke='%23FFFFFF' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E");
-        background-size: 200% 200%;
-        pointer-events: none;
-        transition: opacity 0.5s ease, filter 0.5s ease;
-        z-index: -1;
-        animation: rotate 60s infinite linear;
-    }
-
-    /* Graduated ray opacity and color with warmth/coolness filter */
-    .control-item:has(.brightness-slider[value^="1"])::after,
-    .control-item:has(.brightness-slider[value^="2"])::after {
-        opacity: 0.1;
-        filter: sepia(30%); /* Warmer tint */
-    }
-    .control-item:has(.brightness-slider[value^="3"])::after,
-    .control-item:has(.brightness-slider[value^="4"])::after {
-        opacity: 0.2;
-        filter: sepia(20%);
-    }
-    .control-item:has(.brightness-slider[value^="5"])::after,
-    .control-item:has(.brightness-slider[value^="6"])::after {
-        opacity: 0.4;
-        filter: sepia(10%); /* Nearly neutral */
-    }
-    .control-item:has(.brightness-slider[value^="7"])::after,
-    .control-item:has(.brightness-slider[value^="8"])::after {
-        opacity: 0.6;
-        filter: hue-rotate(10deg) saturate(0.8); /* Slightly cooler */
-    }
-    .control-item:has(.brightness-slider[value^="9"])::after,
-    .control-item:has(.brightness-slider[value="100"])::after {
-        opacity: 0.9;
-        filter: hue-rotate(20deg) saturate(0.7); /* Coolest blue-white tint */
-    }
-
-    /* Add secondary divine ray effect - MODIFIED FOR COLOR GRADIENT */
-    .control-item:has(.brightness-slider[value^="7"])::before,
-    .control-item:has(.brightness-slider[value^="8"])::before {
-        box-shadow:
-            0 0 0 15px rgba(245, 250, 255, 0.3),
-            0 0 30px 30px rgba(245, 250, 255, 0.2),
-            inset 0 0 40px rgba(245, 250, 255, 0.4);
-    }
-
-    .control-item:has(.brightness-slider[value^="9"])::before,
-    .control-item:has(.brightness-slider[value="100"])::before {
-        box-shadow:
-            0 0 0 20px rgba(235, 245, 255, 0.5),
-            0 0 40px 40px rgba(235, 245, 255, 0.3),
-            inset 0 0 50px rgba(235, 245, 255, 0.7);
-    }
-
-    /* Divine Light for brightness value text - WITH COLOR GRADIENT */
-    .brightness-value {
-        position: relative;
-        font-family: 'Playfair Display', serif;
-        display: block;
-        text-align: center;
-        font-style: italic;
-        color: var(--primary);
-        font-size: 1.1rem;
-        margin-top: 5px;
-        transition: all 0.3s ease;
-        text-shadow: 0 0 0 rgba(255, 255, 255, 0);
-    }
-
-    .brightness-slider[value^="5"] + .brightness-value,
-    .brightness-slider[value^="6"] + .brightness-value {
-        color: var(--dark);
-        text-shadow: 0 0 8px rgba(255, 245, 220, 0.7); /* Neutral white glow */
-    }
-
-    .brightness-slider[value^="7"] + .brightness-value,
-    .brightness-slider[value^="8"] + .brightness-value {
-        color: var(--dark);
-        text-shadow: 0 0 8px rgba(245, 250, 255, 0.8); /* Cool white glow */
-    }
-
-    .brightness-slider[value^="9"] + .brightness-value,
-    .brightness-slider[value="100"] + .brightness-value {
-        color: var(--dark);
-        text-shadow: 0 0 12px rgba(235, 245, 255, 1), 0 0 5px rgba(235, 245, 255, 1); /* Blue-white glow */
-        font-weight: bold;
-    }
-
-    /* Rotation animation for the light rays */
-    @keyframes rotate {
-        0% {
-            transform: rotate(0deg);
+        :root {
+            --primary: #2D6852;
+            --secondary: #AC8A63;
+            --accent: #D6955B;
+            --dark: #1E3F33;
+            --light: #F8F1E3;
+            --gold: #DBAA5C;
+            --divine-glow: rgba(255, 255, 255, 0.9);
+            --divine-halo: rgba(255, 255, 255, 0.7);
         }
-        100% {
-            transform: rotate(360deg);
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            font-family: 'Cormorant Garamond', serif;
+            margin: 0;
+            padding: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M20,20 Q30,5 50,20 T80,20 Q95,30 80,50 T80,80 Q70,95 50,80 T20,80 Q5,70 20,50 T20,20 Z' fill='none' stroke='%23AC8A6320' stroke-width='0.5'/%3E%3C/svg%3E");
+            background-size: 120px 120px;
         }
-    }
 
-    /* Art Nouveau decorative corners for control items */
-    .control-item::before {
-        content: "";
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        width: 20px;
-        height: 20px;
-        border-top: 2px solid var(--gold);
-        border-left: 2px solid var(--gold);
-        border-top-left-radius: 5px;
-        z-index: 5;
-    }
+        /* Art Nouveau Title */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            text-align: center;
+            font-size: 3.5rem;
+            color: var(--dark);
+            margin: 1.5rem 0;
+            font-weight: 700;
+            position: relative;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 0px rgba(219, 170, 92, 0.2);
+        }
 
-    .control-item::after {
-        content: "";
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-        width: 20px;
-        height: 20px;
-        border-bottom: 2px solid var(--gold);
-        border-right: 2px solid var(--gold);
-        border-bottom-right-radius: 5px;
-        z-index: 5;
-    }
+        h1::before,
+        h1::after {
+            content: "✦";
+            color: var(--gold);
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 2rem;
+        }
 
-    /* Enhanced Slider styling with divine glow effect */
-    .brightness-slider {
-        -webkit-appearance: none;
-        width: 100%;
-        height: 6px;
-        background: linear-gradient(90deg, var(--dark), var(--gold));
-        border-radius: 10px;
-        outline: none;
-        opacity: 0.8;
-        transition: opacity 0.2s, box-shadow 0.3s;
-        margin: 10px 0;
-        position: relative;
-    }
+        h1::before {
+            left: calc(50% - 150px);
+        }
 
-    .brightness-slider::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 22px;
-        height: 22px;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23F8F1E3' stroke='%232D6852' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='6' fill='%23DBAA5C'/%3E%3C/svg%3E");
-        background-size: contain;
-        cursor: pointer;
-        box-shadow: 0 0 0 rgba(255, 255, 255, 0);
-        transition: box-shadow 0.3s ease;
-        position: relative;
-        z-index: 2;
-    }
+        h1::after {
+            right: calc(50% - 150px);
+        }
 
-    /* Enhanced slider thumb glow - WITH COLOR GRADIENT */
-    .brightness-slider[value^="1"]::-webkit-slider-thumb,
-    .brightness-slider[value^="2"]::-webkit-slider-thumb {
-        box-shadow: 0 0 5px 2px rgba(255, 230, 180, 0.4); /* Warm amber glow */
-    }
+        h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary);
+            font-size: 1.7rem;
+            margin-bottom: 1.2rem;
+            position: relative;
+            display: inline-block;
+            font-weight: 400;
+            font-style: italic;
+        }
 
-    .brightness-slider[value^="3"]::-webkit-slider-thumb,
-    .brightness-slider[value^="4"]::-webkit-slider-thumb {
-        box-shadow: 0 0 8px 4px rgba(255, 235, 190, 0.5); /* Warm white */
-    }
+        h2::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            height: 2px;
+            width: 100%;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
 
-    .brightness-slider[value^="5"]::-webkit-slider-thumb,
-    .brightness-slider[value^="6"]::-webkit-slider-thumb {
-        box-shadow: 0 0 10px 5px rgba(255, 245, 220, 0.6); /* Neutral white */
-    }
+        h3 {
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--dark);
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
 
-    .brightness-slider[value^="7"]::-webkit-slider-thumb,
-    .brightness-slider[value^="8"]::-webkit-slider-thumb {
-        box-shadow: 0 0 15px 8px rgba(245, 250, 255, 0.7); /* Cool white */
-    }
+        /* Main container */
+        .controls {
+            max-width: 1200px;
+            margin: 2rem auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2.5rem;
+            padding: 1rem;
+        }
 
-    .brightness-slider[value^="9"]::-webkit-slider-thumb,
-    .brightness-slider[value="100"]::-webkit-slider-thumb {
-        box-shadow: 0 0 20px 10px rgba(235, 245, 255, 0.9); /* Blueish white at max */
-    }
+        /* Art Nouveau Panel Styling */
+        .control-section {
+            position: relative;
+            background: linear-gradient(135deg, rgba(248, 241, 227, 0.95), rgba(255, 255, 255, 0.95));
+            border-radius: 5px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(30, 63, 51, 0.1);
+        }
 
-    /* Add divine rays around the slider thumb */
-    .brightness-slider[value^="9"]::-webkit-slider-thumb::before,
-    .brightness-slider[value="100"]::-webkit-slider-thumb::before {
-        content: "";
-        position: absolute;
-        top: -100%;
-        left: -100%;
-        width: 300%;
-        height: 300%;
-        background-image: radial-gradient(circle, rgba(235, 245, 255, 0.9) 0%, rgba(255,255,255,0) 70%);
-        z-index: -1;
-    }
+        /* Art Nouveau Border Frame */
+        .control-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 1px solid var(--gold);
+            border-radius: 5px;
+            padding: 15px;
+            pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M0,0 L30,0 Q35,0 35,5 L35,30 Q35,35 30,35 L0,35 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M100,0 L70,0 Q65,0 65,5 L65,30 Q65,35 70,35 L100,35 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M0,100 L30,100 Q35,100 35,95 L35,70 Q35,65 30,65 L0,65 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3Cpath d='M100,100 L70,100 Q65,100 65,95 L65,70 Q65,65 70,65 L100,65 Z' fill='none' stroke='%23DBAA5C' stroke-width='1'/%3E%3C/svg%3E");
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
+            z-index: 0;
+        }
 
-    /* State indicator */
-    .state-indicator {
-        display: inline-block;
-        padding: 0.4rem 1.2rem;
-        border-radius: 20px;
-        font-family: 'Playfair Display', serif;
-        background: #B25F5F;
-        color: var(--light);
-        font-size: 0.9rem;
-        position: relative;
-        font-style: italic;
-        box-shadow: 0 3px 8px rgba(30, 63, 51, 0.1);
-        border: 1px solid rgba(219, 170, 92, 0.3);
-    }
+        .control-section::after {
+            content: "";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 30px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 50'%3E%3Cpath d='M50,0 C60,10 70,15 100,15 L100,50 L0,50 L0,15 C30,15 40,10 50,0 Z' fill='%23F8F1E3' stroke='%23DBAA5C' stroke-width='1.5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: cover;
+            z-index: 1;
+        }
 
-    .state-indicator.active {
-        background: var(--primary);
-        box-shadow: 0 0 15px rgba(219, 170, 92, 0.5);
-    }
+        /* Control items */
+        .control-item {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(248, 241, 227, 0.8));
+            border-radius: 5px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(30, 63, 51, 0.07);
+            z-index: 1;
+            border: 1px solid rgba(219, 170, 92, 0.3);
+        }
 
-    /* Rest of the existing CSS remains the same */
-    /* Button styling */
-    button {
-        font-family: 'Cormorant Garamond', serif;
-        background: var(--primary);
-        color: var(--light);
-        border: none;
-        padding: 0.7rem 1.5rem;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 1rem;
-        margin: 0.8rem 0.5rem 0.5rem 0;
-        position: relative;
-        overflow: hidden;
-        letter-spacing: 1px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 10px rgba(30, 63, 51, 0.15);
-        border: 1px solid rgba(219, 170, 92, 0.3);
-    }
+        /* Divine Light Effect for Light Control Items */
+        .brightness-control {
+            position: relative;
+            margin: 15px 0;
+            transition: all 0.5s ease-in-out;
+        }
 
-    button::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12,2 C17.5,2 22,6.5 22,12 C22,17.5 17.5,22 12,22 C6.5,22 2,17.5 2,12 C2,6.5 6.5,2 12,2 Z M12,5 C13.5,7 16,8 19,8 C19,13 16,16 12,18 C8,16 5,13 5,8 C8,8 10.5,7 12,5 Z' fill='rgba(248, 241, 227, 0.05)'/%3E%3C/svg%3E");
-        background-size: 24px 24px;
-        opacity: 0.1;
-    }
+        /* The glowing container effect */
+        .control-item:has(.brightness-control) {
+            position: relative;
+            overflow: hidden;
+        }
 
-    button:hover {
-        background: var(--secondary);
-        transform: translateY(-3px);
-        box-shadow: 0 6px 15px rgba(30, 63, 51, 0.2);
-    }
+        /* Divine light radiance based on slider value - ENHANCED WITH GRADIENT COLORS */
+        .control-item:has(.brightness-slider[value="0"]) {
+            box-shadow: 0 4px 15px rgba(30, 63, 51, 0.07);
+        }
 
-    .update-btn {
-        background: var(--secondary);
-    }
+        .control-item:has(.brightness-slider[value^="1"]),
+        .control-item:has(.brightness-slider[value^="2"]) {
+            box-shadow: 0 0 15px 5px rgba(255, 235, 200, 0.3);
+            /* Warm glow at low values */
+        }
 
-    .take-picture-btn {
-        background: var(--dark);
-    }
+        .control-item:has(.brightness-slider[value^="3"]),
+        .control-item:has(.brightness-slider[value^="4"]) {
+            box-shadow: 0 0 20px 10px rgba(255, 235, 200, 0.4);
+            /* Warm glow at low-medium values */
+        }
 
-    #cancelWateringBtn {
-        background: #B25F5F;
-    }
+        .control-item:has(.brightness-slider[value^="5"]),
+        .control-item:has(.brightness-slider[value^="6"]) {
+            box-shadow: 0 0 25px 15px rgba(255, 245, 220, 0.5);
+            /* Transitioning to whiter */
+        }
 
-    #cancelWateringBtn:hover {
-        background: #C96D6D;
-    }
+        .control-item:has(.brightness-slider[value^="7"]),
+        .control-item:has(.brightness-slider[value^="8"]) {
+            box-shadow: 0 0 35px 25px rgba(245, 250, 255, 0.6);
+            /* Slightly cooler white */
+        }
 
-    /* Camera grid with Art Nouveau styling */
-    .camera-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: 3rem;
-        margin: 3rem auto;
-        max-width: 1200px;
-        padding: 0 1.5rem;
-    }
+        .control-item:has(.brightness-slider[value^="9"]),
+        .control-item:has(.brightness-slider[value="100"]) {
+            box-shadow: 0 0 150px 85px rgba(235, 245, 255, 0.8);
+            /* Cool blueish white at max */
+        }
 
-    /* Art Nouveau Camera Container */
-    .camera-container {
-        position: relative;
-        background: linear-gradient(135deg, rgba(248, 241, 227, 0.9), rgba(255, 255, 255, 0.9));
-        padding: 3rem 1.5rem 1.5rem;
-        text-align: center;
-        border-radius: 5px;
-        overflow: visible;
-        box-shadow: 0 10px 30px rgba(30, 63, 51, 0.15);
-    }
+        /* Divine Light Inner Glow - ENHANCED WITH COLOR GRADIENT */
+        .control-item:has(.brightness-slider[value="0"])::before {
+            opacity: 0;
+        }
 
-    /* Art Nouveau Decorative Frame */
-    .camera-container::before {
-        content: "";
-        position: absolute;
-        top: -3px;
-        left: -3px;
-        right: -3px;
-        bottom: -3px;
-        border-radius: 8px;
-        /* SVG Art Nouveau Border */
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect x='0' y='0' width='100' height='100' fill='none' stroke='%23DBAA5C' stroke-width='5'/%3E%3Cpath d='M0,20 Q20,10 50,20 T100,20' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M0,80 Q20,90 50,80 T100,80' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M20,0 Q10,20 20,50 T20,100' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M80,0 Q90,20 80,50 T80,100' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Ccircle cx='50' cy='12' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='50' cy='88' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='12' cy='50' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='88' cy='50' r='5' fill='%23DBAA5C'/%3E%3C/svg%3E");
-        background-size: 100% 100%;
-        background-position: center;
-        background-repeat: no-repeat;
-        pointer-events: none;
-        z-index: 0;
-    }
+        .control-item:has(.brightness-slider)::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: -1;
+            transition: opacity 0.5s ease, background 0.5s ease;
+            opacity: 0;
+        }
 
-    /* Art Nouveau Flourish on Top */
-    .camera-container::after {
-        content: "";
-        position: absolute;
-        top: -30px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 120px;
-        height: 60px;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 60'%3E%3Cpath d='M60,0 C70,20 90,20 120,15 L120,60 L0,60 L0,15 C30,20 50,20 60,0 Z' fill='%23F8F1E3' stroke='%23DBAA5C' stroke-width='2'/%3E%3Cpath d='M60,15 C45,35 75,35 60,50' fill='none' stroke='%232D6852' stroke-width='1.5' stroke-dasharray='1,2'/%3E%3Ccircle cx='60' cy='25' r='5' fill='%23DBAA5C'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-size: contain;
-        z-index: 2;
-    }
+        .control-item:has(.brightness-slider[value^="1"])::before,
+        .control-item:has(.brightness-slider[value^="2"])::before {
+            opacity: 0.3;
+            background: radial-gradient(circle at center,
+                    rgba(255, 230, 180, 0.8),
+                    /* Warm amber glow */
+                    transparent 70%);
+        }
 
-    /* Image styling */
-    .camera-container img {
-        width: 320px;
-        height: 240px;
-        object-fit: cover;
-        border-radius: 3px;
-        box-shadow: 0 6px 16px rgba(30, 63, 51, 0.15);
-        border: 3px solid var(--light);
-        margin-bottom: 1.5rem;
-        position: relative;
-        z-index: 1;
-        transition: all 0.4s ease;
-    }
+        .control-item:has(.brightness-slider[value^="3"])::before,
+        .control-item:has(.brightness-slider[value^="4"])::before {
+            opacity: 0.5;
+            background: radial-gradient(circle at center,
+                    rgba(255, 235, 190, 0.8),
+                    /* Warm white */
+                    transparent 70%);
+        }
 
-    .camera-container img:hover {
-        transform: scale(1.03) translateY(-5px);
-        box-shadow: 0 12px 24px rgba(30, 63, 51, 0.2);
-    }
+        .control-item:has(.brightness-slider[value^="5"])::before,
+        .control-item:has(.brightness-slider[value^="6"])::before {
+            opacity: 0.7;
+            background: radial-gradient(circle at center,
+                    rgba(255, 245, 220, 0.8),
+                    /* Neutral white */
+                    transparent 70%);
+        }
 
-    /* Watering Progress Styling */
-    #wateringProgress {
-        margin-top: 1.5rem;
-        padding: 1rem;
-        background: rgba(248, 241, 227, 0.7);
-        border-radius: 5px;
-        border: 1px solid var(--gold);
-        position: relative;
-    }
+        .control-item:has(.brightness-slider[value^="7"])::before,
+        .control-item:has(.brightness-slider[value^="8"])::before {
+            opacity: 0.8;
+            background: radial-gradient(circle at center,
+                    rgba(245, 250, 255, 0.8),
+                    /* Cool white */
+                    transparent 75%);
+        }
 
-    #progressBar {
-        height: 8px;
-        background: linear-gradient(90deg, var(--primary), var(--gold));
-        border-radius: 4px;
-        transition: width 0.5s;
-    }
+        .control-item:has(.brightness-slider[value^="9"])::before,
+        .control-item:has(.brightness-slider[value="100"])::before {
+            opacity: 1;
+            background: radial-gradient(circle at center,
+                    rgba(235, 245, 255, 0.9),
+                    /* Blueish white at max */
+                    transparent 80%);
+        }
 
-    /* Progress Bar Container */
-    #wateringProgress > div:nth-child(3) {
-        background-color: rgba(255, 255, 255, 0.5);
-        border-radius: 4px;
-        height: 8px;
-        overflow: hidden;
-        border: 1px solid rgba(219, 170, 92, 0.3);
-        margin: 0.5rem 0;
-    }
+        /* Art Nouveau Light Ray Details - ENHANCED WITH STRONGER DIVINE RAYS AND COLOR */
+        .control-item:has(.brightness-slider[value="0"])::after {
+            opacity: 0;
+        }
 
-    /* Status text styling */
-    #wateringStatus, #currentZone, #zonesProgress, #estimatedCompletion, #progressPercent {
-        font-family: 'Cormorant Garamond', serif;
-        color: var(--dark);
-        font-style: italic;
-    }
+        .control-item:has(.brightness-slider)::after {
+            content: "";
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            right: -100%;
+            bottom: -100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg%3E%3Cpath d='M50,0 L50,100 M0,50 L100,50' stroke='%23FFFFFF' stroke-width='2'/%3E%3Cpath d='M14.6,14.6 L85.4,85.4 M14.6,85.4 L85.4,14.6' stroke='%23FFFFFF' stroke-width='2'/%3E%3Cpath d='M25,0 L25,100 M75,0 L75,100 M0,25 L100,25 M0,75 L100,75' stroke='%23FFFFFF' stroke-width='1'/%3E%3Cpath d='M8,8 L92,92 M8,92 L92,8' stroke='%23FFFFFF' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E");
+            background-size: 200% 200%;
+            pointer-events: none;
+            transition: opacity 0.5s ease, filter 0.5s ease;
+            z-index: -1;
+            animation: rotate 60s infinite linear;
+        }
 
-    /* Decorative Divider */
-    hr {
-        border: none;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, var(--gold), transparent);
-        margin: 2rem 0;
-    }
-</style>
+        /* Graduated ray opacity and color with warmth/coolness filter */
+        .control-item:has(.brightness-slider[value^="1"])::after,
+        .control-item:has(.brightness-slider[value^="2"])::after {
+            opacity: 0.1;
+            filter: sepia(30%);
+            /* Warmer tint */
+        }
+
+        .control-item:has(.brightness-slider[value^="3"])::after,
+        .control-item:has(.brightness-slider[value^="4"])::after {
+            opacity: 0.2;
+            filter: sepia(20%);
+        }
+
+        .control-item:has(.brightness-slider[value^="5"])::after,
+        .control-item:has(.brightness-slider[value^="6"])::after {
+            opacity: 0.4;
+            filter: sepia(10%);
+            /* Nearly neutral */
+        }
+
+        .control-item:has(.brightness-slider[value^="7"])::after,
+        .control-item:has(.brightness-slider[value^="8"])::after {
+            opacity: 0.6;
+            filter: hue-rotate(10deg) saturate(0.8);
+            /* Slightly cooler */
+        }
+
+        .control-item:has(.brightness-slider[value^="9"])::after,
+        .control-item:has(.brightness-slider[value="100"])::after {
+            opacity: 0.9;
+            filter: hue-rotate(20deg) saturate(0.7);
+            /* Coolest blue-white tint */
+        }
+
+        /* Add secondary divine ray effect - MODIFIED FOR COLOR GRADIENT */
+        .control-item:has(.brightness-slider[value^="7"])::before,
+        .control-item:has(.brightness-slider[value^="8"])::before {
+            box-shadow:
+                0 0 0 15px rgba(245, 250, 255, 0.3),
+                0 0 30px 30px rgba(245, 250, 255, 0.2),
+                inset 0 0 40px rgba(245, 250, 255, 0.4);
+        }
+
+        .control-item:has(.brightness-slider[value^="9"])::before,
+        .control-item:has(.brightness-slider[value="100"])::before {
+            box-shadow:
+                0 0 0 20px rgba(235, 245, 255, 0.5),
+                0 0 40px 40px rgba(235, 245, 255, 0.3),
+                inset 0 0 50px rgba(235, 245, 255, 0.7);
+        }
+
+        /* Divine Light for brightness value text - WITH COLOR GRADIENT */
+        .brightness-value {
+            position: relative;
+            font-family: 'Playfair Display', serif;
+            display: block;
+            text-align: center;
+            font-style: italic;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+        }
+
+        .brightness-slider[value^="5"]+.brightness-value,
+        .brightness-slider[value^="6"]+.brightness-value {
+            color: var(--dark);
+            text-shadow: 0 0 8px rgba(255, 245, 220, 0.7);
+            /* Neutral white glow */
+        }
+
+        .brightness-slider[value^="7"]+.brightness-value,
+        .brightness-slider[value^="8"]+.brightness-value {
+            color: var(--dark);
+            text-shadow: 0 0 8px rgba(245, 250, 255, 0.8);
+            /* Cool white glow */
+        }
+
+        .brightness-slider[value^="9"]+.brightness-value,
+        .brightness-slider[value="100"]+.brightness-value {
+            color: var(--dark);
+            text-shadow: 0 0 12px rgba(235, 245, 255, 1), 0 0 5px rgba(235, 245, 255, 1);
+            /* Blue-white glow */
+            font-weight: bold;
+        }
+
+        /* Rotation animation for the light rays */
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Art Nouveau decorative corners for control items */
+        .control-item::before {
+            content: "";
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 20px;
+            height: 20px;
+            border-top: 2px solid var(--gold);
+            border-left: 2px solid var(--gold);
+            border-top-left-radius: 5px;
+            z-index: 5;
+        }
+
+        .control-item::after {
+            content: "";
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            border-bottom: 2px solid var(--gold);
+            border-right: 2px solid var(--gold);
+            border-bottom-right-radius: 5px;
+            z-index: 5;
+        }
+
+        /* Enhanced Slider styling with divine glow effect */
+        .brightness-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--dark), var(--gold));
+            border-radius: 10px;
+            outline: none;
+            opacity: 0.8;
+            transition: opacity 0.2s, box-shadow 0.3s;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .brightness-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%23F8F1E3' stroke='%232D6852' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='12' r='6' fill='%23DBAA5C'/%3E%3C/svg%3E");
+            background-size: contain;
+            cursor: pointer;
+            box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+            transition: box-shadow 0.3s ease;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Enhanced slider thumb glow - WITH COLOR GRADIENT */
+        .brightness-slider[value^="1"]::-webkit-slider-thumb,
+        .brightness-slider[value^="2"]::-webkit-slider-thumb {
+            box-shadow: 0 0 5px 2px rgba(255, 230, 180, 0.4);
+            /* Warm amber glow */
+        }
+
+        .brightness-slider[value^="3"]::-webkit-slider-thumb,
+        .brightness-slider[value^="4"]::-webkit-slider-thumb {
+            box-shadow: 0 0 8px 4px rgba(255, 235, 190, 0.5);
+            /* Warm white */
+        }
+
+        .brightness-slider[value^="5"]::-webkit-slider-thumb,
+        .brightness-slider[value^="6"]::-webkit-slider-thumb {
+            box-shadow: 0 0 10px 5px rgba(255, 245, 220, 0.6);
+            /* Neutral white */
+        }
+
+        .brightness-slider[value^="7"]::-webkit-slider-thumb,
+        .brightness-slider[value^="8"]::-webkit-slider-thumb {
+            box-shadow: 0 0 15px 8px rgba(245, 250, 255, 0.7);
+            /* Cool white */
+        }
+
+        .brightness-slider[value^="9"]::-webkit-slider-thumb,
+        .brightness-slider[value="100"]::-webkit-slider-thumb {
+            box-shadow: 0 0 20px 10px rgba(235, 245, 255, 0.9);
+            /* Blueish white at max */
+        }
+
+        /* Add divine rays around the slider thumb */
+        .brightness-slider[value^="9"]::-webkit-slider-thumb::before,
+        .brightness-slider[value="100"]::-webkit-slider-thumb::before {
+            content: "";
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 300%;
+            height: 300%;
+            background-image: radial-gradient(circle, rgba(235, 245, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%);
+            z-index: -1;
+        }
+
+        /* State indicator */
+        .state-indicator {
+            display: inline-block;
+            padding: 0.4rem 1.2rem;
+            border-radius: 20px;
+            font-family: 'Playfair Display', serif;
+            background: #B25F5F;
+            color: var(--light);
+            font-size: 0.9rem;
+            position: relative;
+            font-style: italic;
+            box-shadow: 0 3px 8px rgba(30, 63, 51, 0.1);
+            border: 1px solid rgba(219, 170, 92, 0.3);
+        }
+
+        .state-indicator.active {
+            background: var(--primary);
+            box-shadow: 0 0 15px rgba(219, 170, 92, 0.5);
+        }
+
+        /* Rest of the existing CSS remains the same */
+        /* Button styling */
+        button {
+            font-family: 'Cormorant Garamond', serif;
+            background: var(--primary);
+            color: var(--light);
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.8rem 0.5rem 0.5rem 0;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(30, 63, 51, 0.15);
+            border: 1px solid rgba(219, 170, 92, 0.3);
+        }
+
+        button::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12,2 C17.5,2 22,6.5 22,12 C22,17.5 17.5,22 12,22 C6.5,22 2,17.5 2,12 C2,6.5 6.5,2 12,2 Z M12,5 C13.5,7 16,8 19,8 C19,13 16,16 12,18 C8,16 5,13 5,8 C8,8 10.5,7 12,5 Z' fill='rgba(248, 241, 227, 0.05)'/%3E%3C/svg%3E");
+            background-size: 24px 24px;
+            opacity: 0.1;
+        }
+
+        button:hover {
+            background: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(30, 63, 51, 0.2);
+        }
+
+        .update-btn {
+            background: var(--secondary);
+        }
+
+        .take-picture-btn {
+            background: var(--dark);
+        }
+
+        #cancelWateringBtn {
+            background: #B25F5F;
+        }
+
+        #cancelWateringBtn:hover {
+            background: #C96D6D;
+        }
+
+        /* Camera grid with Art Nouveau styling */
+        .camera-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 3rem;
+            margin: 3rem auto;
+            max-width: 1200px;
+            padding: 0 1.5rem;
+        }
+
+        /* Art Nouveau Camera Container */
+        .camera-container {
+            position: relative;
+            background: linear-gradient(135deg, rgba(248, 241, 227, 0.9), rgba(255, 255, 255, 0.9));
+            padding: 3rem 1.5rem 1.5rem;
+            text-align: center;
+            border-radius: 5px;
+            overflow: visible;
+            box-shadow: 0 10px 30px rgba(30, 63, 51, 0.15);
+        }
+
+        /* Art Nouveau Decorative Frame */
+        .camera-container::before {
+            content: "";
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 8px;
+            /* SVG Art Nouveau Border */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect x='0' y='0' width='100' height='100' fill='none' stroke='%23DBAA5C' stroke-width='5'/%3E%3Cpath d='M0,20 Q20,10 50,20 T100,20' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M0,80 Q20,90 50,80 T100,80' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M20,0 Q10,20 20,50 T20,100' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Cpath d='M80,0 Q90,20 80,50 T80,100' fill='none' stroke='%23DBAA5C' stroke-width='3'/%3E%3Ccircle cx='50' cy='12' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='50' cy='88' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='12' cy='50' r='5' fill='%23DBAA5C'/%3E%3Ccircle cx='88' cy='50' r='5' fill='%23DBAA5C'/%3E%3C/svg%3E");
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Art Nouveau Flourish on Top */
+        .camera-container::after {
+            content: "";
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 60px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 60'%3E%3Cpath d='M60,0 C70,20 90,20 120,15 L120,60 L0,60 L0,15 C30,20 50,20 60,0 Z' fill='%23F8F1E3' stroke='%23DBAA5C' stroke-width='2'/%3E%3Cpath d='M60,15 C45,35 75,35 60,50' fill='none' stroke='%232D6852' stroke-width='1.5' stroke-dasharray='1,2'/%3E%3Ccircle cx='60' cy='25' r='5' fill='%23DBAA5C'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
+            z-index: 2;
+        }
+
+        /* Image styling */
+        .camera-container img {
+            width: 320px;
+            height: 240px;
+            object-fit: cover;
+            border-radius: 3px;
+            box-shadow: 0 6px 16px rgba(30, 63, 51, 0.15);
+            border: 3px solid var(--light);
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+            transition: all 0.4s ease;
+        }
+
+        .camera-container img:hover {
+            transform: scale(1.03) translateY(-5px);
+            box-shadow: 0 12px 24px rgba(30, 63, 51, 0.2);
+        }
+
+        /* Watering Progress Styling */
+        #wateringProgress {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(248, 241, 227, 0.7);
+            border-radius: 5px;
+            border: 1px solid var(--gold);
+            position: relative;
+        }
+
+        #progressBar {
+            height: 8px;
+            background: linear-gradient(90deg, var(--primary), var(--gold));
+            border-radius: 4px;
+            transition: width 0.5s;
+        }
+
+        /* Progress Bar Container */
+        #wateringProgress>div:nth-child(3) {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(219, 170, 92, 0.3);
+            margin: 0.5rem 0;
+        }
+
+        /* Status text styling */
+        #wateringStatus,
+        #currentZone,
+        #zonesProgress,
+        #estimatedCompletion,
+        #progressPercent {
+            font-family: 'Cormorant Garamond', serif;
+            color: var(--dark);
+            font-style: italic;
+        }
+
+        /* Decorative Divider */
+        hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 2rem 0;
+        }
+    </style>
 
 <body>
     <h1>Tillis Schillis</h1>
@@ -657,7 +691,8 @@
                             <option value="2">Stage 2</option>
                             <option value="3">Stage 3</option>
                         </select>
-                        <input type="number" step="0.1" name="min_moisture" placeholder="Min Moisture Threshold (%)" required
+                        <input type="number" step="0.1" name="min_moisture" placeholder="Min Moisture Threshold (%)"
+                            required
                             style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7); width: 100%; margin-bottom: 10px;">
                         <input type="number" name="min_adc" placeholder="Min ADC (Dry)" required
                             style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7); width: 100%; margin-bottom: 10px;">
@@ -673,12 +708,16 @@
             <div class="control-item">
                 <h3>Configured Sensors</h3>
                 {% for sensor_id, config in sensor_configs.items() %}
-                <div style="border: 1px solid var(--gold); border-radius: 5px; padding: 15px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.5);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="font-family: 'Playfair Display', serif; color: var(--dark); font-size: 1.1rem;">{{ sensor_id }}</span>
+                <div
+                    style="border: 1px solid var(--gold); border-radius: 5px; padding: 15px; margin-bottom: 15px; background: rgba(255, 255, 255, 0.5);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-family: 'Playfair Display', serif; color: var(--dark); font-size: 1.1rem;">{{
+                            sensor_id }}</span>
                         <form action="/sensor/toggle" method="POST" style="margin: 0;">
                             <input type="hidden" name="sensor_id" value="{{ sensor_id }}">
-                            <button type="submit" class="state-indicator {{ 'active' if config.active else '' }}" style="margin: 0;">
+                            <button type="submit" class="state-indicator {{ 'active' if config.active else '' }}"
+                                style="margin: 0;">
                                 {{ "Active" if config.active else "Inactive" }}
                             </button>
                         </form>
@@ -686,7 +725,8 @@
                     <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 10px;">
                         <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Stage:</span>
                         <span>{{ config.stage }}</span>
-                        <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Min Moisture Threshold:</span>
+                        <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Min Moisture
+                            Threshold:</span>
                         <span>{{ config.min_moisture }}%</span>
                         <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Min ADC:</span>
                         <span>{{ config.min_adc }}</span>
@@ -695,12 +735,15 @@
                     </div>
                     {% if sensor_id in sensor_readings and sensor_readings[sensor_id] %}
                     <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
-                        <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Latest Reading:</span>
+                        <span
+                            style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Latest
+                            Reading:</span>
                         {# Re-adding the necessary Jinja set tag #}
                         {% set latest = sensor_readings[sensor_id][-1] %}
                         <div style="display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 5px;">
                             <span>Moisture (%):</span>
-                            <span>{{ "%.1f"|format(latest.moisture_percent) if latest.moisture_percent is not none else 'N/A' }}%</span>
+                            <span>{{ "%.1f"|format(latest.moisture_percent) if latest.moisture_percent is not none else
+                                'N/A' }}%</span>
                             <span>Raw ADC:</span>
                             <span>{{ latest.raw_adc }}</span>
                             <span>Temperature:</span>
@@ -737,25 +780,35 @@
                 </div>
 
                 <!-- Auto Mode Controls -->
-                <div class="auto-mode-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
-                    <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto Mode</h4>
+                <div class="auto-mode-controls"
+                    style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
+                    <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto
+                        Mode</h4>
 
                     <!-- Auto Mode Toggle Button -->
                     <form id="zeusAutoModeForm{{ light_id }}" action="/light/{{ light_id }}/auto" method="POST">
-                        <input type="hidden" id="zeus_auto_mode{{ light_id }}" name="auto_mode" value="{{ 'true' if not zeus_auto_states[light_id]['enabled'] else 'false' }}">
-                        <input type="hidden" name="start_time" value="{{ zeus_auto_states[light_id]['start_time'] or '18:00' }}">
-                        <input type="hidden" name="duration_hours" value="{{ zeus_auto_states[light_id]['duration_hours'] or 12 }}">
-                        <input type="hidden" name="brightness" value="{{ zeus_auto_states[light_id]['brightness'] or 100 }}">
+                        <input type="hidden" id="zeus_auto_mode{{ light_id }}" name="auto_mode"
+                            value="{{ 'true' if not zeus_auto_states[light_id]['enabled'] else 'false' }}">
+                        <input type="hidden" name="start_time"
+                            value="{{ zeus_auto_states[light_id]['start_time'] or '18:00' }}">
+                        <input type="hidden" name="duration_hours"
+                            value="{{ zeus_auto_states[light_id]['duration_hours'] or 12 }}">
+                        <input type="hidden" name="brightness"
+                            value="{{ zeus_auto_states[light_id]['brightness'] or 100 }}">
 
-                        <button type="submit" class="state-indicator {{ 'active' if zeus_auto_states[light_id]['enabled'] else '' }}" style="width: 100%; cursor: pointer; margin-bottom: 10px;">
-                            {{ "AUTO ON - Click to Disable" if zeus_auto_states[light_id]['enabled'] else "AUTO OFF - Click to Enable" }}
+                        <button type="submit"
+                            class="state-indicator {{ 'active' if zeus_auto_states[light_id]['enabled'] else '' }}"
+                            style="width: 100%; cursor: pointer; margin-bottom: 10px;">
+                            {{ "AUTO ON - Click to Disable" if zeus_auto_states[light_id]['enabled'] else "AUTO OFF -
+                            Click to Enable" }}
                         </button>
                     </form>
 
                     <!-- Auto Mode Settings (Collapsible) -->
                     <div class="collapsible-container">
                         <div class="collapsible-header" onclick="toggleCollapsible('zeus_settings_{{ light_id }}')">
-                            <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
+                            <span
+                                style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
                             <span class="collapsible-icon">+</span>
                         </div>
 
@@ -765,22 +818,30 @@
 
                                 <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
                                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                        <label for="zeus_start_time{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
+                                        <label for="zeus_start_time{{ light_id }}"
+                                            style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start
+                                            Time:</label>
                                         <input type="time" id="zeus_start_time{{ light_id }}" name="start_time"
                                             value="{{ zeus_auto_states[light_id]['start_time'] or '18:00' }}"
                                             style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
                                     </div>
 
                                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                        <label for="zeus_duration_hours{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration (hours):</label>
-                                        <input type="number" id="zeus_duration_hours{{ light_id }}" name="duration_hours" min="1" max="24"
+                                        <label for="zeus_duration_hours{{ light_id }}"
+                                            style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration
+                                            (hours):</label>
+                                        <input type="number" id="zeus_duration_hours{{ light_id }}"
+                                            name="duration_hours" min="1" max="24"
                                             value="{{ zeus_auto_states[light_id]['duration_hours'] or 12 }}"
                                             style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
                                     </div>
 
                                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                        <label for="zeus_brightness{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Brightness (%):</label>
-                                        <input type="number" id="zeus_brightness{{ light_id }}" name="brightness" min="1" max="100"
+                                        <label for="zeus_brightness{{ light_id }}"
+                                            style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Brightness
+                                            (%):</label>
+                                        <input type="number" id="zeus_brightness{{ light_id }}" name="brightness"
+                                            min="1" max="100"
                                             value="{{ zeus_auto_states[light_id]['brightness'] or 100 }}"
                                             style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
                                     </div>
@@ -815,24 +876,34 @@
                     </form>
 
                     <!-- Auto Mode Controls -->
-                    <div class="auto-mode-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
-                        <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto Mode</h4>
+                    <div class="auto-mode-controls"
+                        style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
+                        <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">
+                            Auto Mode</h4>
 
                         <!-- Auto Mode Toggle Button -->
                         <form id="autoModeForm{{ light_id }}" action="/light/{{ light_id }}/auto" method="POST">
-                            <input type="hidden" id="auto_mode{{ light_id }}" name="auto_mode" value="{{ 'true' if not static_light_auto_states[light_id]['enabled'] else 'false' }}">
-                            <input type="hidden" name="start_time" value="{{ static_light_auto_states[light_id]['start_time'] or '18:00' }}">
-                            <input type="hidden" name="duration_hours" value="{{ static_light_auto_states[light_id]['duration_hours'] or 12 }}">
+                            <input type="hidden" id="auto_mode{{ light_id }}" name="auto_mode"
+                                value="{{ 'true' if not static_light_auto_states[light_id]['enabled'] else 'false' }}">
+                            <input type="hidden" name="start_time"
+                                value="{{ static_light_auto_states[light_id]['start_time'] or '18:00' }}">
+                            <input type="hidden" name="duration_hours"
+                                value="{{ static_light_auto_states[light_id]['duration_hours'] or 12 }}">
 
-                            <button type="submit" class="state-indicator {{ 'active' if static_light_auto_states[light_id]['enabled'] else '' }}" style="width: 100%; cursor: pointer; margin-bottom: 10px;">
-                                {{ "AUTO ON - Click to Disable" if static_light_auto_states[light_id]['enabled'] else "AUTO OFF - Click to Enable" }}
+                            <button type="submit"
+                                class="state-indicator {{ 'active' if static_light_auto_states[light_id]['enabled'] else '' }}"
+                                style="width: 100%; cursor: pointer; margin-bottom: 10px;">
+                                {{ "AUTO ON - Click to Disable" if static_light_auto_states[light_id]['enabled'] else
+                                "AUTO OFF - Click to Enable" }}
                             </button>
                         </form>
 
                         <!-- Auto Mode Settings (Collapsible) -->
                         <div class="collapsible-container">
-                            <div class="collapsible-header" onclick="toggleCollapsible('static_settings_{{ light_id }}')">
-                                <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
+                            <div class="collapsible-header"
+                                onclick="toggleCollapsible('static_settings_{{ light_id }}')">
+                                <span
+                                    style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
                                 <span class="collapsible-icon">+</span>
                             </div>
 
@@ -841,16 +912,23 @@
                                     <input type="hidden" name="auto_mode" value="true">
 
                                     <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
-                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                            <label for="start_time{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
+                                        <div
+                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                            <label for="start_time{{ light_id }}"
+                                                style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start
+                                                Time:</label>
                                             <input type="time" id="start_time{{ light_id }}" name="start_time"
                                                 value="{{ static_light_auto_states[light_id]['start_time'] or '18:00' }}"
                                                 style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
                                         </div>
 
-                                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                            <label for="duration_hours{{ light_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration (hours):</label>
-                                            <input type="number" id="duration_hours{{ light_id }}" name="duration_hours" min="1" max="24"
+                                        <div
+                                            style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                            <label for="duration_hours{{ light_id }}"
+                                                style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Duration
+                                                (hours):</label>
+                                            <input type="number" id="duration_hours{{ light_id }}" name="duration_hours"
+                                                min="1" max="24"
                                                 value="{{ static_light_auto_states[light_id]['duration_hours'] or 12 }}"
                                                 style="width: 60px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
                                         </div>
@@ -872,149 +950,72 @@
                 <h2>Wasser</h2>
 
                 <div class="control-item">
-                <h3>Watering Control</h3>
-                <button id="startWateringBtn" onclick="startWateringSequence()">Execute default sequence</button>
-                <button id="cancelWateringBtn" onclick="cancelWateringSequence()"
-                    style="display: none; background-color: #B25F5F;">Cancel Watering</button>
+                    <h3>Watering Control</h3>
+                    <button id="startWateringBtn" onclick="startWateringSequence()">Execute default sequence</button>
+                    <button id="cancelWateringBtn" onclick="cancelWateringSequence()"
+                        style="display: none; background-color: #B25F5F;">Cancel Watering</button>
 
-                <div id="wateringProgress" style="display: none; margin-top: 15px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span id="wateringStatus">Starting...</span>
-                        <span id="progressPercent">0%</span>
-                    </div>
-                    <div style="width: 100%; background-color: #e0e0e0; border-radius: 5px; overflow: hidden;">
-                        <div id="progressBar"
-                            style="height: 8px; width: 0%; transition: width 0.5s;"></div>
-                    </div>
-                    <div style="display: flex;height: 24px; justify-content: space-between; margin-top: 5px;">
-                        <span id="currentZone"></span>
-                        <span id="zonesProgress"></span>
-                    </div>
-                    <div style="margin-top: 5px;">
-                        <span id="estimatedCompletion"></span>
-                    </div>
-                </div>
-
-                <!-- Auto Mode Controls -->
-                <div class="auto-mode-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
-                    <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Auto Mode</h4>
-
-                    <!-- Auto Mode Toggle Button -->
-                    <form id="wateringAutoModeForm" action="/water/auto" method="POST">
-                        <input type="hidden" id="watering_auto_mode" name="auto_mode" value="{{ 'true' if not watering_auto_state['enabled'] else 'false' }}">
-                        <input type="hidden" name="start_time" value="{{ watering_auto_state['start_time'] or '06:00' }}">
-
-                        <button type="submit" class="state-indicator {{ 'active' if watering_auto_state['enabled'] else '' }}" style="width: 100%; cursor: pointer; margin-bottom: 10px;">
-                            {{ "AUTO ON - Click to Disable" if watering_auto_state['enabled'] else "AUTO OFF - Click to Enable" }}
-                        </button>
-                    </form>
-
-                    <!-- Auto Mode Settings (Collapsible) -->
-                    <div class="collapsible-container">
-                        <div class="collapsible-header" onclick="toggleCollapsible('watering_settings')">
-                            <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">Settings</span>
-                            <span class="collapsible-icon">+</span>
+                    <div id="wateringProgress" style="display: none; margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span id="wateringStatus">Starting...</span>
+                            <span id="progressPercent">0%</span>
                         </div>
-
-                        <div id="watering_settings" class="collapsible-content" style="display: none;">
-                            <form action="/water/auto" method="POST">
-                                <input type="hidden" name="auto_mode" value="true">
-
-                                <div style="display: flex; flex-direction: column; gap: 10px; margin: 15px 0;">
-                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                        <label for="watering_start_time" style="font-family: 'Cormorant Garamond', serif; color: var(--dark);">Start Time:</label>
-                                        <input type="time" id="watering_start_time" name="start_time"
-                                            value="{{ watering_auto_state['start_time'] or '06:00' }}"
-                                            style="padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                    </div>
-
-                                    <button type="submit" class="update-btn" style="margin-top: 10px;">
-                                        Update Settings
-                                    </button>
-                                </div>
-                            </form>
+                        <div style="width: 100%; background-color: #e0e0e0; border-radius: 5px; overflow: hidden;">
+                            <div id="progressBar" style="height: 8px; width: 0%; transition: width 0.5s;"></div>
+                        </div>
+                        <div style="display: flex;height: 24px; justify-content: space-between; margin-top: 5px;">
+                            <span id="currentZone"></span>
+                            <span id="zonesProgress"></span>
+                        </div>
+                        <div style="margin-top: 5px;">
+                            <span id="estimatedCompletion"></span>
                         </div>
                     </div>
-                </div>
-
-                <!-- Watering Durations Controls -->
-                <div class="watering-durations-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(219, 170, 92, 0.3);">
-                    <h4 style="font-family: 'Playfair Display', serif; color: var(--primary); margin-bottom: 10px;">Watering Durations</h4>
-
-                    <!-- Durations Settings (Collapsible) -->
-                    <div class="collapsible-container">
-                        <div class="collapsible-header" onclick="toggleCollapsible('watering_durations')">
-                            <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
-                                Configure Zone Durations
-                            </span>
-                            <span class="collapsible-icon">+</span>
-                        </div>
-
-                        <div id="watering_durations" class="collapsible-content" style="display: none;">
-                            <div style="margin: 15px 0 10px; font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
-                                Set how long each zone should be watered (in seconds)
-                            </div>
-
-                            <div id="wateringDurationsForm">
-                                {% for valve_id, duration in watering_durations.items() %}
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                                    <label for="duration_{{ valve_id }}" style="font-family: 'Cormorant Garamond', serif; color: var(--dark); min-width: 80px;">
-                                        Zone {{ valve_id }}:
-                                    </label>
-                                    <input type="number" id="duration_{{ valve_id }}"
-                                        value="{{ duration }}" min="0" max="600" step="10"
-                                        style="width: 80px; padding: 5px; border: 1px solid var(--gold); border-radius: 3px; background: rgba(255, 255, 255, 0.7);">
-                                    <span style="font-family: 'Cormorant Garamond', serif; color: var(--dark); font-style: italic;">
-                                        seconds
-                                    </span>
-                                </div>
-                                {% endfor %}
-
-                                <button type="button" class="update-btn" onclick="updateWateringDurations()" style="margin-top: 10px;">
-                                    Update Durations
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                 </div>
                 </div>
             </div>
-            <!-- Fan Control Section -->
-            <div class="control-section">
-                <h2>Fan Control</h2>
-                <div class="control-item">
-                    <h3>Status & Control</h3>
-                    <div style="margin-bottom: 15px;">
-                        <p style="margin-bottom: 8px;">Fan Status: <span id="fan-status" class="state-indicator">Unknown</span></p>
-                        <p style="margin-bottom: 8px;">Auto Control: <span id="fan-auto-status" class="state-indicator">Unknown</span></p>
-                        <p style="margin-bottom: 8px;">Target Humidity: <span id="fan-target-humidity-display">N/A</span>%</p>
-                    </div>
-
-                    <!-- Manual Controls -->
-                    <div style="margin-bottom: 15px;">
-                        <button id="fanManualOnBtn" onclick="setFanManual(true)">Manual ON</button>
-                        <button id="fanManualOffBtn" onclick="setFanManual(false)">Manual OFF</button>
-                    </div>
-
-                    <!-- Auto Control Toggle -->
-                     <div style="margin-bottom: 15px;">
-                         <button id="fanAutoToggleBtn" class="state-indicator" onclick="toggleFanAutoControl()" style="width: 100%; cursor: pointer;">
-                             Enable Auto Control
-                         </button>
-                     </div>
-
-                    <!-- Target Humidity Slider -->
-                    <div class="brightness-control"> <!-- Reusing brightness style for slider -->
-                         <label for="fanTargetHumiditySlider" style="font-family: 'Cormorant Garamond', serif; color: var(--dark); display: block; margin-bottom: 5px;">Set Target Humidity:</label>
-                         <input type="range" id="fanTargetHumiditySlider" name="target_humidity" min="40" max="90" value="70" step="1"
-                             oninput="updateFanTargetDisplay(this.value)" onchange="setFanTargetHumidity(this.value)" class="brightness-slider">
-                         <span id="fan-target-humidity-value" class="brightness-value">70%</span>
-                     </div>
-                </div>
+        </div>
+    </div>
+    <!-- Fan Control Section -->
+    <div class="control-section">
+        <h2>Fan Control</h2>
+        <div class="control-item">
+            <h3>Status & Control</h3>
+            <div style="margin-bottom: 15px;">
+                <p style="margin-bottom: 8px;">Fan Status: <span id="fan-status" class="state-indicator">Unknown</span>
+                </p>
+                <p style="margin-bottom: 8px;">Auto Control: <span id="fan-auto-status"
+                        class="state-indicator">Unknown</span></p>
+                <p style="margin-bottom: 8px;">Target Humidity: <span id="fan-target-humidity-display">N/A</span>%</p>
             </div>
-            <!-- End Fan Control Section -->
-        </div> <!-- End wrapper div -->
+
+            <!-- Manual Controls -->
+            <div style="margin-bottom: 15px;">
+                <button id="fanManualOnBtn" onclick="setFanManual(true)">Manual ON</button>
+                <button id="fanManualOffBtn" onclick="setFanManual(false)">Manual OFF</button>
+            </div>
+
+            <!-- Auto Control Toggle -->
+            <div style="margin-bottom: 15px;">
+                <button id="fanAutoToggleBtn" class="state-indicator" onclick="toggleFanAutoControl()"
+                    style="width: 100%; cursor: pointer;">
+                    Enable Auto Control
+                </button>
+            </div>
+
+            <!-- Target Humidity Slider -->
+            <div class="brightness-control"> <!-- Reusing brightness style for slider -->
+                <label for="fanTargetHumiditySlider"
+                    style="font-family: 'Cormorant Garamond', serif; color: var(--dark); display: block; margin-bottom: 5px;">Set
+                    Target Humidity:</label>
+                <input type="range" id="fanTargetHumiditySlider" name="target_humidity" min="40" max="90" value="70"
+                    step="1" oninput="updateFanTargetDisplay(this.value)" onchange="setFanTargetHumidity(this.value)"
+                    class="brightness-slider">
+                <span id="fan-target-humidity-value" class="brightness-value">70%</span>
+            </div>
+        </div>
+    </div>
+    <!-- End Fan Control Section -->
+    </div> <!-- End wrapper div -->
 
     </div> <!-- End .controls -->
 
@@ -1034,46 +1035,46 @@
         {% endfor %}
     </div>
 
-<style>
-    /* Collapsible container styling */
-    .collapsible-container {
-        margin-top: 5px;
-        border: 1px solid rgba(219, 170, 92, 0.3);
-        border-radius: 5px;
-        overflow: hidden;
-        background: rgba(255, 255, 255, 0.5);
-    }
+    <style>
+        /* Collapsible container styling */
+        .collapsible-container {
+            margin-top: 5px;
+            border: 1px solid rgba(219, 170, 92, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.5);
+        }
 
-    .collapsible-header {
-        padding: 10px 15px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: linear-gradient(90deg, rgba(248, 241, 227, 0.7), rgba(255, 255, 255, 0.7));
-        border-bottom: 1px solid rgba(219, 170, 92, 0.2);
-        transition: all 0.3s ease;
-    }
+        .collapsible-header {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, rgba(248, 241, 227, 0.7), rgba(255, 255, 255, 0.7));
+            border-bottom: 1px solid rgba(219, 170, 92, 0.2);
+            transition: all 0.3s ease;
+        }
 
-    .collapsible-header:hover {
-        background: linear-gradient(90deg, rgba(248, 241, 227, 0.9), rgba(255, 255, 255, 0.9));
-    }
+        .collapsible-header:hover {
+            background: linear-gradient(90deg, rgba(248, 241, 227, 0.9), rgba(255, 255, 255, 0.9));
+        }
 
-    .collapsible-icon {
-        font-family: 'Playfair Display', serif;
-        color: var(--primary);
-        font-size: 1.2rem;
-        font-weight: bold;
-        transition: transform 0.3s ease;
-    }
+        .collapsible-icon {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
 
-    .collapsible-content {
-        padding: 0 15px;
-        background: rgba(255, 255, 255, 0.7);
-        overflow: hidden;
-        transition: all 0.3s ease;
-    }
-</style>
+        .collapsible-content {
+            padding: 0 15px;
+            background: rgba(255, 255, 255, 0.7);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+    </style>
 
     <script>
         let wateringStatusInterval;
@@ -1093,82 +1094,48 @@
             }
         }
 
-        // --- Watering Functions ---
-        function updateWateringDurations() {
-            const durations = {};
-            {% for valve_id in watering_durations.keys() %}
-            durations['{{ valve_id }}'] = parseInt(document.getElementById('duration_{{ valve_id }}').value) || 0;
-            {% endfor %}
-
-            fetch('/water/durations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(durations)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const form = document.getElementById('wateringDurationsForm');
-                    const successMsg = document.createElement('div');
-                    successMsg.textContent = 'Durations updated successfully!';
-                    successMsg.style.color = 'var(--primary)';
-                    successMsg.style.fontFamily = 'Cormorant Garamond, serif';
-                    successMsg.style.fontStyle = 'italic';
-                    successMsg.style.marginTop = '10px';
-                    form.appendChild(successMsg);
-                    setTimeout(() => { form.removeChild(successMsg); }, 3000);
-                } else {
-                    alert('Error updating durations: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to update watering durations: ' + error.message);
-            });
-        }
-
         function startWateringSequence() {
             fetch('/water/sequence', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'start', schedule: 'default' })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'start', schedule: 'default'})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'watering_sequence_started' || data.result === 'success') {
-                    document.getElementById('wateringProgress').style.display = 'block';
-                    document.getElementById('startWateringBtn').style.display = 'none';
-                    document.getElementById('cancelWateringBtn').style.display = 'inline-block';
-                    startStatusPolling();
-                } else {
-                    alert('Failed to start watering: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to start watering sequence: ' + error.message);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'watering_sequence_started' || data.result === 'success') {
+                        document.getElementById('wateringProgress').style.display = 'block';
+                        document.getElementById('startWateringBtn').style.display = 'none';
+                        document.getElementById('cancelWateringBtn').style.display = 'inline-block';
+                        startStatusPolling();
+                    } else {
+                        alert('Failed to start watering: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to start watering sequence: ' + error.message);
+                });
         }
 
         function cancelWateringSequence() {
             fetch('/water/cancel', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'cancel' })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: 'cancel'})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'cancelled' || data.result === 'success') {
-                    document.getElementById('wateringStatus').textContent = 'Cancelled';
-                    resetWateringUI();
-                } else {
-                    alert('Failed to cancel: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Failed to cancel watering sequence: ' + error.message);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'cancelled' || data.result === 'success') {
+                        document.getElementById('wateringStatus').textContent = 'Cancelled';
+                        resetWateringUI();
+                    } else {
+                        alert('Failed to cancel: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to cancel watering sequence: ' + error.message);
+                });
         }
 
         function startStatusPolling() {
@@ -1212,7 +1179,7 @@
                         const estimatedTime = new Date(state.estimated_completion);
                         estimatedCompletionEl.textContent = `Estimated completion: ${estimatedTime.toLocaleTimeString()}`;
                     } else {
-                         estimatedCompletionEl.textContent = '';
+                        estimatedCompletionEl.textContent = '';
                     }
 
                     if (['completed', 'cancelled', 'error', 'idle'].includes(state.status)) {
@@ -1244,23 +1211,23 @@
             fetch(`/camera/${cameraIndex}/take/picture`, {
                 method: 'POST'
             })
-            .then(response => {
-                if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
-                return response.text(); // Assuming simple text response on success
-            })
-            .then(text => {
-                 alert(text || `Picture taken successfully for camera ${cameraIndex + 1}`);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert(`Failed to take picture for camera ${cameraIndex + 1}: ${error}`);
-            });
+                .then(response => {
+                    if (!response.ok) {throw new Error(`HTTP error! status: ${response.status}`);}
+                    return response.text(); // Assuming simple text response on success
+                })
+                .then(text => {
+                    alert(text || `Picture taken successfully for camera ${cameraIndex + 1}`);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(`Failed to take picture for camera ${cameraIndex + 1}: ${error}`);
+                });
         }
 
         // --- Fan Control ---
         // Define variables in the outer scope
         let fanStatusEl, fanAutoStatusEl, fanTargetDisplayEl, fanTargetSlider, fanTargetValueEl, fanAutoToggleBtn;
-        let currentFanState = { is_on: false, target_humidity: 70.0, control_active: false };
+        let currentFanState = {is_on: false, target_humidity: 70.0, control_active: false};
 
         function updateFanUI(state) {
             currentFanState = state; // Store the latest state
@@ -1281,7 +1248,7 @@
             fanTargetDisplayEl.textContent = state.target_humidity.toFixed(1);
             // Only update slider value if it's not currently being dragged (prevents jumpiness)
             if (document.activeElement !== fanTargetSlider) {
-                 fanTargetSlider.value = state.target_humidity;
+                fanTargetSlider.value = state.target_humidity;
             }
             // Update slider value display based on slider's current value
             fanTargetValueEl.textContent = `${Math.round(fanTargetSlider.value)}%`;
@@ -1305,80 +1272,80 @@
         function setFanManual(turnOn) {
             fetch('/api/fan/manual', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ on: turnOn })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({on: turnOn})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success' && data.fan_state) {
-                    updateFanUI(data.fan_state);
-                } else {
-                    alert('Error setting fan manual state: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => alert('Error setting fan manual state: ' + error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.fan_state) {
+                        updateFanUI(data.fan_state);
+                    } else {
+                        alert('Error setting fan manual state: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => alert('Error setting fan manual state: ' + error));
         }
 
         function toggleFanAutoControl() {
             const targetActiveState = !currentFanState.control_active; // Toggle based on current state
-             fetch('/api/fan/control', {
+            fetch('/api/fan/control', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ active: targetActiveState })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({active: targetActiveState})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success' && data.fan_state) {
-                    updateFanUI(data.fan_state);
-                } else {
-                    alert('Error toggling fan auto control: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => alert('Error toggling fan auto control: ' + error));
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.fan_state) {
+                        updateFanUI(data.fan_state);
+                    } else {
+                        alert('Error toggling fan auto control: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => alert('Error toggling fan auto control: ' + error));
         }
 
-         function updateFanTargetDisplay(value) {
-             // Only update the visual display next to the slider during input
-             if(fanTargetValueEl) {
+        function updateFanTargetDisplay(value) {
+            // Only update the visual display next to the slider during input
+            if (fanTargetValueEl) {
                 fanTargetValueEl.textContent = `${Math.round(value)}%`;
-             }
-             if(fanTargetSlider) {
-                 fanTargetSlider.setAttribute('value', Math.round(value)); // Update attribute for CSS
-             }
-         }
+            }
+            if (fanTargetSlider) {
+                fanTargetSlider.setAttribute('value', Math.round(value)); // Update attribute for CSS
+            }
+        }
 
         function setFanTargetHumidity(value) {
             const target = parseFloat(value);
-             fetch('/api/fan/target', {
+            fetch('/api/fan/target', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target: target })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({target: target})
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success' && data.fan_state) {
-                    updateFanUI(data.fan_state); // Update UI with confirmed state from backend
-                } else {
-                     alert('Error setting target humidity: ' + (data.message || 'Unknown error'));
-                     // Revert slider if needed, based on last known good state
-                     if(fanTargetSlider) {
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.fan_state) {
+                        updateFanUI(data.fan_state); // Update UI with confirmed state from backend
+                    } else {
+                        alert('Error setting target humidity: ' + (data.message || 'Unknown error'));
+                        // Revert slider if needed, based on last known good state
+                        if (fanTargetSlider) {
+                            fanTargetSlider.value = currentFanState.target_humidity;
+                            updateFanTargetDisplay(currentFanState.target_humidity); // Update display too
+                        }
+                    }
+                })
+                .catch(error => {
+                    alert('Error setting target humidity: ' + error);
+                    if (fanTargetSlider) {
                         fanTargetSlider.value = currentFanState.target_humidity;
                         updateFanTargetDisplay(currentFanState.target_humidity); // Update display too
-                     }
-                }
-            })
-            .catch(error => {
-                alert('Error setting target humidity: ' + error);
-                 if(fanTargetSlider) {
-                    fanTargetSlider.value = currentFanState.target_humidity;
-                    updateFanTargetDisplay(currentFanState.target_humidity); // Update display too
-                 }
-            });
+                    }
+                });
         }
 
 
         // --- DOMContentLoaded Listener ---
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // --- Initialize Fan Control Elements ---
             fanStatusEl = document.getElementById('fan-status');
             fanAutoStatusEl = document.getElementById('fan-auto-status');
@@ -1397,25 +1364,25 @@
                 // Set initial attribute for CSS :has() selector
                 slider.setAttribute('value', slider.value);
                 // Update attribute on input for CSS :has() selector
-                slider.addEventListener('input', function() {
+                slider.addEventListener('input', function () {
                     this.setAttribute('value', this.value);
                     // Update the visual percentage display next to the slider
                     const valueDisplay = this.nextElementSibling;
                     if (valueDisplay && valueDisplay.classList.contains('brightness-value')) {
                         valueDisplay.textContent = `${this.value}%`;
                     }
-                     // Animation removed to resolve persistent linter errors
+                    // Animation removed to resolve persistent linter errors
                     const controlItem = this.closest('.control-item');
                     // if (controlItem) {
                     //     controlItem.style.transition = 'box-shadow 0.5s ease-in-out';
                     // } // Keep transition if desired, but animation is removed.
                 });
-                 // Ensure the form submits on change (if needed, though oninput usually covers it)
-                 // slider.addEventListener('change', function() { this.form.submit(); });
+                // Ensure the form submits on change (if needed, though oninput usually covers it)
+                // slider.addEventListener('change', function() { this.form.submit(); });
             });
 
-             // --- Check Initial Watering Status ---
-             fetch('/water/status')
+            // --- Check Initial Watering Status ---
+            fetch('/water/status')
                 .then(response => response.json())
                 .then(data => {
                     // Check status within watering_state object

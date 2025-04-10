@@ -460,42 +460,6 @@ class HydroControlApp:
                 'message': f"Error getting auto settings: {str(e)}"
             }, status=500)
             
-    async def set_watering_durations(self, request: web.Request) -> web.Response:
-        """Endpoint to set durations for each watering zone."""
-        try:
-            data = await request.json()
-            durations = {}
-            
-            # Parse durations from the request
-            for valve_id_str, duration_str in data.items():
-                try:
-                    valve_id = int(valve_id_str)
-                    duration = int(duration_str)
-                    durations[valve_id] = duration
-                except (ValueError, TypeError):
-                    return web.Response(
-                        text=f"Invalid duration format for valve {valve_id_str}. Must be a number.",
-                        status=400
-                    )
-            
-            # Update durations in the controller
-            self.current_state = self.controller.set_watering_durations(
-                self.current_state, durations
-            )
-            
-            return web.json_response({
-                'status': 'success',
-                'message': 'Watering durations updated successfully',
-                'durations': self.current_state.watering_durations
-            })
-                
-        except Exception as e:
-            self.logger.error(f"Error setting watering durations: {str(e)}", exc_info=True)
-            return web.json_response({
-                'status': 'error',
-                'message': f"Error setting watering durations: {str(e)}"
-            }, status=500)
-
     async def get_camera_image(self, request: web.Request) -> web.Response:
         """Endpoint to get an image from a specific camera."""
         camera_id = self._parse_camera_id(request)

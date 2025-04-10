@@ -23,7 +23,6 @@ def render(request, context):
             'static_lights': context.static_light_states,
             'static_light_auto_states': context.static_light_auto_states,
             'zeus_auto_states': context.zeus_auto_states,
-            'watering_auto_state': context.watering_auto_state,
             'watering_durations': context.watering_durations,
             'sensor_configs': context.sensor_configs,
             'sensor_readings': context.sensor_readings,

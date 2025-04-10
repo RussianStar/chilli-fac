@@ -180,7 +180,6 @@ class Controller:
         return current_state
 
     # Removed set_watering_auto_mode, get_watering_auto_settings, 
-    # set_watering_durations, calculate_total_watering_duration
 
     # --- Fan Control Methods ---
 
